@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Kullanici ayarlari ve onbellek (git'e girmemeli)
+config.json
+cache/
+
+# Test artiklari
+__test__
+test_sel_config.json
+_manual.json
+
+# Derleme ciktisi
+dist/
+build/pywork/
+build/ocr_runtime/
+
+# IDE / isletim sistemi
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
