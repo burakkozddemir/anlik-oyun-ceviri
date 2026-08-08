@@ -25,7 +25,7 @@ Bu nedenle anti-cheat sistemleri acisindan ekran kaydi almakla aynidir.
 
 ## Hakkinda
 
-- **Gelistiren:** CodeFein sirketi
+- **Gelistiren:** Codefein Studio
 - **Tasarim:** Burak Ozdemir
 - **Durum:** Beta (v1.1.0)
 - **Telif:** Copyright (c) 2026 CodeFein. Tum haklari saklidir.
