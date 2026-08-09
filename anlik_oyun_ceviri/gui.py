@@ -83,6 +83,7 @@ class MainGUI:
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self._log("Program hazir. F9 = baslat/durdur, F10 = ekran ceviri, F11 = altyazi goster/gizle", "info")
+        self.root.after(400, self._maybe_prompt_api_key)
 
     def _set_window_icon(self, root):
         try:
@@ -514,6 +515,95 @@ class MainGUI:
 
         theme.ModernButton(win, text="Kapat", command=win.destroy,
                            kind="accent", font=(theme.FONT, 10)).pack(pady=(0, 20))
+
+    # ---------- API anahtari hatirlatmasi (ilk acilis) ----------
+    def _maybe_prompt_api_key(self):
+        """Anahtar tanimli degilse acilista 'API Anahtari Ekle' penceresini acar."""
+        keys = self.cfg.get("api_keys", {})
+        if keys.get("deepl") or keys.get("openai"):
+            return
+        if self.cfg.get("api_key_prompt_done"):
+            return
+        self._prompt_api_key_window()
+
+    def _prompt_api_key_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("API Anahtari Ekle")
+        win.configure(bg=theme.BG)
+        win.resizable(False, False)
+        win.transient(self.root)
+
+        card = theme.card(win, bg=theme.CARD)
+        card.pack(fill="both", expand=True, padx=20, pady=20)
+
+        tk.Label(card, text="API Anahtari Ekle", bg=theme.CARD, fg=theme.TEXT,
+                 font=(theme.FONT_BOLD, 16)).pack(anchor="w", padx=16, pady=(16, 2))
+        tk.Label(card, text=(
+            "Google ve MyMemory motorlari anahtarsiz, ucretsiz calisir. "
+            "DeepL / OpenAI (ChatGPT, Gemini, DeepSeek) motorlari icin API "
+            "anahtari gerekir. Anahtariniz yalnizca bu cihazda, sifreli "
+            "olarak saklanir; GitHub'a ya da hicbir sunucuya gonderilmez."
+        ), bg=theme.CARD, fg=theme.MUTED, wraplength=540, justify="left",
+            font=(theme.FONT, 9)).pack(anchor="w", padx=16, pady=(0, 12))
+
+        g = tk.Frame(card, bg=theme.CARD)
+        g.pack(fill="x", padx=16)
+        ttk.Label(g, text="DeepL Anahtari:").grid(row=0, column=0, sticky="w", pady=3)
+        ttk.Entry(g, textvariable=self.deepl_var, show="*", width=44).grid(
+            row=0, column=1, sticky="we", padx=8, pady=3)
+        ttk.Label(g, text="OpenAI/Gemini/DeepSeek Anahtari:").grid(row=1, column=0, sticky="w", pady=3)
+        ttk.Entry(g, textvariable=self.openai_var, show="*", width=44).grid(
+            row=1, column=1, sticky="we", padx=8, pady=3)
+        ttk.Label(g, text="Base URL (istege bagli):").grid(row=2, column=0, sticky="w", pady=3)
+        ttk.Entry(g, textvariable=self.base_var, width=44).grid(
+            row=2, column=1, sticky="we", padx=8, pady=3)
+        ttk.Label(g, text="Model (istege bagli):").grid(row=3, column=0, sticky="w", pady=3)
+        ttk.Entry(g, textvariable=self.model_var, width=44).grid(
+            row=3, column=1, sticky="we", padx=8, pady=3)
+        g.columnconfigure(1, weight=1)
+
+        tk.Frame(card, bg=theme.BORDER, height=1).pack(fill="x", padx=16, pady=12)
+        tk.Label(card, text="Anahtar nasil alinir?", bg=theme.CARD, fg=theme.ACCENT,
+                 font=(theme.FONT_BOLD, 11)).pack(anchor="w", padx=16, pady=(0, 4))
+        steps = (
+            "1. DeepL: deepl.com/pro-api adresinden ucretsiz kayit olun. 'DeepL API Free' "
+            "planinda olusan 'Authentication Key'i kopyalayip yukaridaki DeepL alanina yapistirin.",
+            "2. OpenAI: platform.openai.com/api-keys adresinde 'Create new secret key' "
+            "butonuyla anahtar olusturup OpenAI alanina yapistirin.",
+            "3. Gemini: aistudio.google.com adresinden anahtar alin. Base URL kutusuna "
+            "https://generativelanguage.googleapis.com/v1beta/openai/ yazin.",
+            "4. DeepSeek: platform.deepseek.com adresinden anahtar alin. Base URL kutusuna "
+            "https://api.deepseek.com/v1, Model kutusuna deepseek-chat yazin.",
+            "5. Anahtar girdikten sonra 'Kaydet ve Kapat' butonuna basin. Anahtar eklemeden "
+            "de Google/MyMemory motorlariyla ceviriye baslayabilirsiniz.",
+        )
+        for s in steps:
+            tk.Label(card, text=s, bg=theme.CARD, fg=theme.MUTED, wraplength=540,
+                     justify="left", font=(theme.FONT, 9)).pack(anchor="w", padx=16, pady=1)
+
+        self.prompt_done_var = tk.BooleanVar(value=False)
+        ttk.Checkbutton(card, text="Bir daha sorma (yalnizca ucretsiz motorlari kullaniyorsaniz)",
+                        variable=self.prompt_done_var).pack(anchor="w", padx=16, pady=(10, 4))
+
+        def close(save):
+            if save:
+                self._sync_cfg()
+                self._log("API anahtari kaydedildi.", "ok")
+            if self.prompt_done_var.get():
+                self.cfg["api_key_prompt_done"] = True
+                config_mod.save_config(self.cfg)
+            win.destroy()
+
+        row = tk.Frame(card, bg=theme.CARD)
+        row.pack(fill="x", padx=16, pady=(6, 14))
+        theme.ModernButton(row, text="Kaydet ve Kapat", command=lambda: close(True),
+                           kind="accent").pack(side="right", padx=(8, 0))
+        theme.ModernButton(row, text="Sonra", command=lambda: close(False),
+                           kind="ghost").pack(side="right")
+        win.protocol("WM_DELETE_WINDOW", lambda: close(False))
+
+        win.grab_set()
+        win.focus_force()
 
     # ================= Olaylar =================
     def _refresh_region_text(self):

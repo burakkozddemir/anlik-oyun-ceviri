@@ -57,6 +57,7 @@ DEFAULT_CONFIG = {
     "start_hidden": False,
     "last_game_name": "",
     "auto_detect_game": True,
+    "api_key_prompt_done": False,
     "window_size": "720x840",
     "window_pos": "",
     "profiles": {},
