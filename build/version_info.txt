@@ -1,8 +1,8 @@
 # UTF-8
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 1, 0, 0),
-    prodvers=(1, 1, 0, 0),
+    filevers=(1, 1, 1, 0),
+    prodvers=(1, 1, 1, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -16,14 +16,14 @@ VSVersionInfo(
         StringTable(
           u'040904B0',
           [
-            StringStruct(u'CompanyName', u'CodeFein'),
+            StringStruct(u'CompanyName', u'CodeFein Studio'),
             StringStruct(u'FileDescription', u'Anlik Oyun Ceviri - Gercek zamanli AI oyun ceviri programi'),
-            StringStruct(u'FileVersion', u'1.1.0'),
+            StringStruct(u'FileVersion', u'1.1.1'),
             StringStruct(u'InternalName', u'AnlikOyunCeviri'),
-            StringStruct(u'LegalCopyright', u'Copyright (c) 2026 CodeFein. Tum haklari saklidir.'),
+            StringStruct(u'LegalCopyright', u'Copyright (c) 2026 CodeFein Studio. Tum haklari saklidir.'),
             StringStruct(u'OriginalFilename', u'AnlikOyunCeviri.exe'),
             StringStruct(u'ProductName', u'Anlik Oyun Ceviri'),
-            StringStruct(u'ProductVersion', u'1.1.0 BETA'),
+            StringStruct(u'ProductVersion', u'1.1.1 BETA'),
           ]
         )
       ]

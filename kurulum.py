@@ -4,7 +4,7 @@
 2) Tesseract OCR kurulumunu denetler, yoksa kurulmasi icin talimat verir
    (Windows: winget install UB-Mannheim.TesseractOCR).
 
-CodeFein sirketi tarafindan gelistirilmistir. Tum haklari saklidir.
+CodeFein Studio tarafindan gelistirilmistir. Tum haklari saklidir.
 """
 import shutil
 import subprocess

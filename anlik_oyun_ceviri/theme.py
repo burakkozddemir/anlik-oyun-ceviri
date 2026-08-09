@@ -1,23 +1,36 @@
-"""Koyu tema: renk paleti, ttk stilleri ve ozel widget yardimcilari."""
+"""Modern koyu tema: renk paleti, ttk stilleri ve ozel widget yardimcilari.
+
+Flat design: derin kontrast, yumusak vurgular, ince cerceveler ve
+hafif hover/active geri bildirimleri.
+"""
 import tkinter as tk
 from tkinter import ttk
 
-BG = "#161923"
-BG_ALT = "#1d2130"
-CARD = "#232839"
-CARD_2 = "#2b3145"
-BORDER = "#353b52"
-TEXT = "#e9ecf4"
-MUTED = "#9aa2ba"
+# --- Palet (modern, derin) ---
+BG = "#0f121a"
+BG_ALT = "#161a25"
+CARD = "#1b2030"
+CARD_2 = "#232a3d"
+CARD_3 = "#2a3248"
+BORDER = "#2d3447"
+BORDER_SOFT = "#242b3d"
+TEXT = "#eef1f8"
+MUTED = "#96a0ba"
+FAINT = "#6b7591"
+
 ACCENT = "#6d8dff"
-ACCENT_HOVER = "#5c7ef2"
-ACCENT_DIM = "#46507a"
+ACCENT_HOVER = "#5474f2"
+ACCENT_DIM = "#3d4a7d"
+ACCENT_SOFT = "#26315c"
+VIOLET = "#9b7bff"
+VIOLET_DIM = "#3d3270"
 GREEN = "#43d9a0"
 GREEN_DIM = "#1f3a33"
 RED = "#ff6b6b"
 RED_DIM = "#3d2326"
 YELLOW = "#f2c06a"
 CYAN = "#5ecde0"
+
 FONT = "Segoe UI"
 FONT_BOLD = "Segoe UI Semibold"
 
@@ -73,17 +86,18 @@ def apply_theme(root):
                     insertcolor=TEXT, bordercolor=BORDER, lightcolor=BORDER,
                     darkcolor=BORDER, padding=6)
     style.map("TEntry",
-              fieldbackground=[("focus", "#30364d")],
+              fieldbackground=[("focus", "#2a3146")],
               bordercolor=[("focus", ACCENT)])
 
     style.configure("TCombobox", fieldbackground=CARD_2, background=CARD_2,
                     foreground=TEXT, arrowcolor=MUTED, bordercolor=BORDER,
                     lightcolor=BORDER, darkcolor=BORDER, padding=5)
     style.map("TCombobox",
-              fieldbackground=[("readonly", CARD_2), ("focus", "#30364d")],
+              fieldbackground=[("readonly", CARD_2), ("focus", "#2a3146")],
               foreground=[("readonly", TEXT)],
               selectbackground=[("readonly", CARD_2)],
-              selectforeground=[("readonly", TEXT)])
+              selectforeground=[("readonly", TEXT)],
+              arrowcolor=[("active", ACCENT)])
 
     style.configure("TSpinbox", fieldbackground=CARD_2, foreground=TEXT,
                     arrowcolor=MUTED, bordercolor=BORDER, padding=5)
@@ -109,7 +123,7 @@ def apply_theme(root):
     style.configure("Secondary.TButton", background=CARD_2, foreground=TEXT,
                     borderwidth=0, padding=(12, 8))
     style.map("Secondary.TButton",
-              background=[("active", "#353b52"), ("pressed", BORDER)])
+              background=[("active", "#2d3550"), ("pressed", BORDER)])
 
     style.configure("Danger.TButton", background=RED_DIM, foreground=RED,
                     borderwidth=0, padding=(12, 8))
@@ -128,17 +142,30 @@ def card(parent, bg=CARD, **kw):
     return frame
 
 
+def section(parent, text, bg=CARD):
+    """Vurgu cubuklu modern bolum basligi."""
+    wrap = tk.Frame(parent, bg=bg)
+    bar = tk.Frame(wrap, bg=ACCENT, width=3, height=14)
+    bar.pack(side="left", padx=(12, 8), pady=(10, 4))
+    bar.pack_propagate(False)
+    lbl = tk.Label(wrap, text=text, bg=bg, fg=ACCENT,
+                   font=(FONT_BOLD, 11))
+    lbl.pack(side="left", pady=(9, 3))
+    return wrap
+
+
 class ModernButton(tk.Button):
-    """Hover destekli duz (flat) modern buton."""
+    """Hover ve basili durum destekli modern flat buton."""
 
     def __init__(self, parent, text, command=None, kind="secondary", **kw):
         palette = {
-            "secondary": (CARD_2, TEXT, "#353b52"),
-            "accent": (ACCENT, "#ffffff", ACCENT_HOVER),
-            "danger": (RED_DIM, RED, "#4a2a2e"),
-            "ghost": (CARD, MUTED, CARD_2),
+            "secondary": (CARD_2, TEXT, "#2d3550", "#212736"),
+            "accent": (ACCENT, "#ffffff", ACCENT_HOVER, ACCENT_DIM),
+            "danger": (RED_DIM, RED, "#4a2a2e", "#331d20"),
+            "ghost": (CARD, MUTED, CARD_2, BG_ALT),
+            "violet": (VIOLET_DIM, VIOLET, "#453c85", "#2f2a5c"),
         }
-        bg, fg, hover = palette.get(kind, palette["secondary"])
+        bg, fg, hover, pressed = palette.get(kind, palette["secondary"])
         kw.setdefault("font", (FONT, 10))
         kw.setdefault("padx", 14)
         kw.setdefault("pady", 7)
@@ -149,9 +176,12 @@ class ModernButton(tk.Button):
                          relief="flat",
                          highlightthickness=0, **kw)
         self._hover = hover
+        self._pressed = pressed
         self._base = bg
         self.bind("<Enter>", self._on_enter)
         self.bind("<Leave>", self._on_leave)
+        self.bind("<ButtonPress-1>", self._on_press)
+        self.bind("<ButtonRelease-1>", self._on_release)
 
     def _on_enter(self, _):
         self.configure(bg=self._hover)
@@ -159,17 +189,36 @@ class ModernButton(tk.Button):
     def _on_leave(self, _):
         self.configure(bg=self._base)
 
+    def _on_press(self, _):
+        self.configure(bg=self._pressed)
+
+    def _on_release(self, _):
+        self.configure(bg=self._hover)
+
     def set_kind(self, kind):
         palette = {
-            "secondary": (CARD_2, TEXT, "#353b52"),
-            "accent": (ACCENT, "#ffffff", ACCENT_HOVER),
-            "danger": (RED_DIM, RED, "#4a2a2e"),
-            "ghost": (CARD, MUTED, CARD_2),
+            "secondary": (CARD_2, TEXT, "#2d3550", "#212736"),
+            "accent": (ACCENT, "#ffffff", ACCENT_HOVER, ACCENT_DIM),
+            "danger": (RED_DIM, RED, "#4a2a2e", "#331d20"),
+            "ghost": (CARD, MUTED, CARD_2, BG_ALT),
+            "violet": (VIOLET_DIM, VIOLET, "#453c85", "#2f2a5c"),
         }
-        bg, fg, hover = palette.get(kind, palette["secondary"])
+        bg, fg, hover, pressed = palette.get(kind, palette["secondary"])
         self._base = bg
         self._hover = hover
+        self._pressed = pressed
         self.configure(bg=bg, fg=fg, activebackground=hover)
+
+
+def stat_cell(parent, bg=CARD_2):
+    """Ust kenarinda vurgu seridi olan istatistik hucresi."""
+    cell = tk.Frame(parent, bg=bg)
+    strip = tk.Frame(cell, bg=ACCENT_DIM, height=3)
+    strip.pack(fill="x")
+    strip.pack_propagate(False)
+    body = tk.Frame(cell, bg=bg, padx=10, pady=6)
+    body.pack(fill="both", expand=True)
+    return cell, body
 
 
 def make_switch(parent, text, variable, command=None, bg=CARD):

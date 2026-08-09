@@ -1,4 +1,4 @@
-# Anlik Oyun Ceviri
+﻿# Anlik Oyun Ceviri
 
 <p align="center">
   <img src="assets/logo.png" width="110" alt="Anlik Oyun Ceviri logo">
@@ -8,7 +8,7 @@
   <strong>PC oyunlarinda altyazilari gercek zamanli okuyup (OCR) ceviren, oyunun
   uzerine saydam altyazi (overlay) olarak bindiren AI ceviri programi</strong>
   <br>
-  <sub>Beta v1.1.0</sub>
+  <sub>Beta v1.1.1</sub>
 </p>
 
 <p align="center">
@@ -27,10 +27,10 @@ anahtarli). Anti-cheat acisindan ekran kaydi almakla aynidir.
 
 ## Hakkinda
 
-- **Gelistiren:** Codefein Studio
+- **Gelistiren:** CodeFein Studio
 - **Tasarim:** Burak Ozdemir
-- **Durum:** Beta (v1.1.0)
-- **Telif:** Copyright (c) 2026 CodeFein. Tum haklari saklidir.
+- **Durum:** Beta (v1.1.1)
+- **Telif:** Copyright (c) 2026 CodeFein Studio. Tum haklari saklidir.
 
 ## Ekran Goruntuleri
 
@@ -63,10 +63,10 @@ anahtarli). Anti-cheat acisindan ekran kaydi almakla aynidir.
 - **Gercek zamanli OCR:** Tesseract motoru (Japonca, Korece, Cince, Rusca, Turkce dahil 100+ dil), Windows OCR yedegi. PSM ayari, buyutme, guven esigi ve OCR timeout destegi.
 - **Ceviri motorlari:** Google (ucretsiz), MyMemory (ucretsiz yedek), DeepL API, ChatGPT/Gemini/DeepSeek API (OpenAI uyumlu).
 - **Toplu ceviri:** Birden fazla altyazi satiri tek istekte cevrilir; satirlar isaretleyicilerle eslestirilir, motor satir sayisini bozarsa otomatik satir satir yedege gecilir.
-- **Akilli yakalama:** Degismeyen karelerde OCR atlanir (goruntu hash'i) — CPU ve OCR yuku ciddi oranda duser.
-- **Overlay:** Oyunun uzerinde saydam ya da kutu (`box`) modunda, tiklamasi oyuna gecen, her zaman ustte altyazi katmani. Overlay, ekran yakalamasindan haric tutulur (WDA_EXCLUDEFROMCAPTURE) — kendi ciktisini tekrar OCR'lamaz.
+- **Akilli yakalama:** Degismeyen karelerde OCR atlanir (goruntu hash'i) â€” CPU ve OCR yuku ciddi oranda duser.
+- **Overlay:** Oyunun uzerinde saydam ya da kutu (`box`) modunda, tiklamasi oyuna gecen, her zaman ustte altyazi katmani. Overlay, ekran yakalamasindan haric tutulur (WDA_EXCLUDEFROMCAPTURE) â€” kendi ciktisini tekrar OCR'lamaz.
 - **Onbellek:** Ayni metni tekrar cevirmez; oyun bazli cache ile gecikme dusuk tutulur. Cache anahtari motor/model degisiminde gecersizlesir.
-- **Bolge secimi:** Altyazilarin oldugu bolgeyi fareyle surukleyerek secersiniz; negatif koordinatli coklu monitör kurulumlari desteklenir.
+- **Bolge secimi:** Altyazilarin oldugu bolgeyi fareyle surukleyerek secersiniz; negatif koordinatli coklu monitÃ¶r kurulumlari desteklenir.
 - **Oyun profilleri:** Her oyunun kendi bolge/dil/gorunum ayarlari otomatik kaydedilir; oyun adi on plandaki **process (.exe)** adindan algilanir.
 - **Canli istatistik:** FPS, ceviri gecikmesi, cevrilen satir sayisi, cache isabeti, atlanan kare sayisi ve hatalar anlik gosterilir.
 - **Guvenilir yasam dongusu:** Altyazi kayboldugunda otomatik temizlenir, durdurma thread'i bekler, pipeline hatalarinda durum arayuzde bildirilir.
@@ -84,10 +84,10 @@ ayarlarla devam edilir.
 
 ## Kurulum
 
-**Kurulum paketi (onerilen):** `dist/AnlikOyunCeviri-Kurulum-v1.1.0-beta.exe` dosyasini
+**Kurulum paketi (onerilen):** `dist/AnlikOyunCeviri-Kurulum-v1.1.1-beta.exe` dosyasini
 indirin ve calistirin. Kurulum; uygulamayi `%LOCALAPPDATA%\Programs\AnlikOyunCeviri`
 altina kurar, Baslat menusu ve masaustu kisa yolu olusturur. Tesseract OCR ve 9 dil
-paketi paketin icinde gelir — ayrica bir sey kurmaniz gerekmez.
+paketi paketin icinde gelir â€” ayrica bir sey kurmaniz gerekmez.
 
 **Kaynak koddan (gelistiriciler icin):** Gereksinim Windows 10/11, Python 3.10+.
 
@@ -183,7 +183,7 @@ PSM ayarlari ve ekran yakalama icin 36 test.
 Hazir kurulum paketi proje klasorunun `dist/` dizininde uretilir:
 
 - `dist/AnlikOyunCeviri/`        -> tasinabilir (portable) uygulama klasoru
-- `dist/AnlikOyunCeviri-Kurulum-v1.1.0-beta.exe` -> kurulum (setup) exe'si
+- `dist/AnlikOyunCeviri-Kurulum-v1.1.1-beta.exe` -> kurulum (setup) exe'si
 
 Kurulum paketi: uygulamayi `%LOCALAPPDATA%\Programs\AnlikOyunCeviri` altina
 kurar, Baslat menusu ve (istenirse) masaustu kisa yolu olusturur, kaldirma
@@ -201,8 +201,8 @@ Notlar:
 - Logo: `python build\make_logo.py` ile `assets/logo.png` ve `assets/logo.ico` uretilir.
 - Ekran goruntuleri: `python build\make_screenshots.py`
 - Paket boyutu ~241 MB (Tesseract + DLL'ler dahil), setup.exe ~74 MB.
-- Beta surum: v1.1.0. Kullanici verisi `%LOCALAPPDATA%\AnlikOyunCeviri`
-  altinda tutulur; kaldirici onbellegi temizler, ayarlar kullaniciya bırakilir.
+- Beta surum: v1.1.1. Kullanici verisi `%LOCALAPPDATA%\AnlikOyunCeviri`
+  altinda tutulur; kaldirici onbellegi temizler, ayarlar kullaniciya bÄ±rakilir.
 
 ## Sorun giderme
 

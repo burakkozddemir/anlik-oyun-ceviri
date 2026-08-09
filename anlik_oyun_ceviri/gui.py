@@ -1,4 +1,4 @@
-"""Ana kontrol penceresi: modern, koyu temali, sekme tabanli arayuz."""
+﻿"""Ana kontrol penceresi: modern, koyu temali, sekme tabanli arayuz."""
 import ctypes
 import os
 import queue
@@ -119,7 +119,10 @@ class MainGUI:
         title = tk.Label(row, text=APP_TITLE, bg=theme.BG, fg=theme.TEXT,
                          font=(theme.FONT_BOLD, 17))
         title.pack(side="left")
-        by = tk.Label(row, text="  by CodeFein", bg=theme.BG, fg=theme.ACCENT,
+        dot = tk.Label(row, text="â—", bg=theme.BG, fg=theme.ACCENT,
+                       font=(theme.FONT_BOLD, 9))
+        dot.pack(side="left", padx=(6, 5), pady=(5, 0))
+        by = tk.Label(row, text=f"by {COMPANY}", bg=theme.BG, fg=theme.MUTED,
                       font=(theme.FONT_BOLD, 10))
         by.pack(side="left", pady=(4, 0))
         if BETA:
@@ -164,7 +167,7 @@ class MainGUI:
         # Oyun karti
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        ttk.Label(c, text="OYUN", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "OYUN").pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
         self.game_var = tk.StringVar(value=self.cfg.get("last_game_name", ""))
@@ -192,7 +195,7 @@ class MainGUI:
         # Diller
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        ttk.Label(c, text="DILLER", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "DILLER").pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 10))
         col1 = tk.Frame(row, bg=theme.CARD)
@@ -202,7 +205,7 @@ class MainGUI:
         src = ttk.Combobox(col1, textvariable=self.source_var, width=18, state="readonly",
                            values=[code for code, _ in LANGUAGES])
         src.pack(fill="x", pady=(4, 0))
-        theme.ModernButton(row, text="⇄", command=self._swap_langs,
+        theme.ModernButton(row, text="â‡„", command=self._swap_langs,
                            kind="ghost", width=2, font=(theme.FONT_BOLD, 13)).pack(
             side="left", padx=10)
         col2 = tk.Frame(row, bg=theme.CARD)
@@ -216,7 +219,7 @@ class MainGUI:
         # Motor
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        ttk.Label(c, text="CEVIRI MOTORU", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "CEVIRI MOTORU").pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
         self.engine_var = tk.StringVar(value=self.cfg.get("engine", "google"))
@@ -242,7 +245,7 @@ class MainGUI:
         # Son ceviri
         c = theme.card(tab)
         c.pack(fill="both", expand=True, padx=14, pady=(8, 14))
-        ttk.Label(c, text="SON CEVIRI", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "SON CEVIRI").pack(fill="x")
         self.output_text = tk.Text(c, height=5, wrap="word", bg=theme.CARD_2,
                                    fg=theme.TEXT, insertbackground=theme.TEXT,
                                    font=(theme.FONT, 11), relief="flat",
@@ -256,10 +259,10 @@ class MainGUI:
         tab = self.tab_look
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        ttk.Label(c, text="YAZI", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "YAZI").pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
-        ttk.Label(row, text="Yazı tipi:").pack(side="left")
+        ttk.Label(row, text="YazÄ± tipi:").pack(side="left")
         self.font_family_var = tk.StringVar(value=self.cfg.get("font_family", "Segoe UI"))
         families = sorted(set(tkfont.families(self.root)))
         fam = ttk.Combobox(row, textvariable=self.font_family_var, width=26,
@@ -289,7 +292,7 @@ class MainGUI:
 
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        ttk.Label(c, text="ALTYAZI KATMANI", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "ALTYAZI KATMANI").pack(fill="x")
         self.mode_var = tk.StringVar(value=self.cfg.get("overlay_mode", "transparent"))
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12)
@@ -324,7 +327,7 @@ class MainGUI:
         tab = self.tab_ocr
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        ttk.Label(c, text="OCR AYARLARI", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "OCR AYARLARI").pack(fill="x")
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=3)
@@ -363,18 +366,18 @@ class MainGUI:
 
         self.stats_card = theme.card(tab)
         self.stats_card.pack(fill="x", padx=14, pady=8)
-        ttk.Label(self.stats_card, text="CANLI ISTATISTIK", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(self.stats_card, "CANLI ISTATISTIK").pack(fill="x")
         grid = tk.Frame(self.stats_card, bg=theme.CARD)
         grid.pack(fill="x", padx=12, pady=(0, 10))
         self.stat_widgets = {}
         stats = [("fps", "FPS"), ("latency", "Gecikme"), ("translated", "Ceviri"),
                  ("hits", "Onbellek isabeti"), ("errors", "Hata"), ("cache_size", "Onbellek boyutu")]
         for i, (key, label) in enumerate(stats):
-            cell = tk.Frame(grid, bg=theme.CARD_2, padx=10, pady=8)
+            cell, body = theme.stat_cell(grid)
             cell.grid(row=i // 3, column=i % 3, sticky="nsew", padx=4, pady=4)
-            tk.Label(cell, text=label, bg=theme.CARD_2, fg=theme.MUTED,
+            tk.Label(body, text=label, bg=theme.CARD_2, fg=theme.MUTED,
                      font=(theme.FONT, 9)).pack(anchor="w")
-            val = tk.Label(cell, text="-", bg=theme.CARD_2, fg=theme.TEXT,
+            val = tk.Label(body, text="-", bg=theme.CARD_2, fg=theme.TEXT,
                            font=(theme.FONT_BOLD, 15))
             val.pack(anchor="w")
             self.stat_widgets[key] = val
@@ -390,7 +393,7 @@ class MainGUI:
         tab = self.tab_api
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        ttk.Label(c, text="DEEPL API", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "DEEPL API").pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
         self.deepl_var = tk.StringVar(value=self.cfg["api_keys"].get("deepl", ""))
@@ -402,7 +405,7 @@ class MainGUI:
 
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        ttk.Label(c, text="OPENAI / GEMINI / DEEPSEEK", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "OPENAI / GEMINI / DEEPSEEK").pack(fill="x")
         g = tk.Frame(c, bg=theme.CARD)
         g.pack(fill="x", padx=12, pady=(0, 10))
         self.openai_var = tk.StringVar(value=self.cfg["api_keys"].get("openai", ""))
@@ -426,10 +429,10 @@ class MainGUI:
 
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        ttk.Label(c, text="GIZLILIK", style="Section.TLabel").pack(anchor="w", padx=12, pady=(10, 4))
+        theme.section(c, "GIZLILIK").pack(fill="x")
         ttk.Label(c, text=(
             "API anahtarlariniz yalnizca cihazinizda saklanir. "
-            "Cevirilecek metinler yalnizca seçtiginiz motorun sunucusuna gonderilir. "
+            "Cevirilecek metinler yalnizca seÃ§tiginiz motorun sunucusuna gonderilir. "
             "Ekran goruntuleri ve ceviri gecmisi cihazinizda kalir; sunucuya yuklenmez."
         ), style="CardMuted.TLabel", wraplength=580, justify="left").pack(
             anchor="w", padx=12, pady=(0, 12))
@@ -457,7 +460,7 @@ class MainGUI:
         bar = tk.Frame(self.root, bg=theme.CARD, height=34)
         bar.pack(fill="x", side="bottom")
         bar.pack_propagate(False)
-        self.sb_state = tk.Label(bar, text="●", bg=theme.CARD, fg=theme.MUTED,
+        self.sb_state = tk.Label(bar, text="â—", bg=theme.CARD, fg=theme.MUTED,
                                  font=(theme.FONT, 12))
         self.sb_state.pack(side="left", padx=(14, 4))
         self.sb_text = tk.Label(bar, text="Durduruldu", bg=theme.CARD, fg=theme.MUTED,
@@ -484,7 +487,7 @@ class MainGUI:
 
         tk.Label(card, text=APP_TITLE, bg=theme.CARD, fg=theme.TEXT,
                  font=(theme.FONT_BOLD, 18)).pack(anchor="w", padx=16, pady=(16, 0))
-        version_txt = f"Sürüm {VERSION}" + (" (BETA)" if BETA else "")
+        version_txt = f"SÃ¼rÃ¼m {VERSION}" + (" (BETA)" if BETA else "")
         tk.Label(card, text=version_txt, bg=theme.CARD, fg=theme.ACCENT,
                  font=(theme.FONT_BOLD, 10)).pack(anchor="w", padx=16)
         tk.Label(card, text="Gercek zamanli AI oyun ceviri programi",
@@ -609,7 +612,7 @@ class MainGUI:
     def _refresh_region_text(self):
         r = self.cfg["region"]
         self.region_var.set(
-            f"Bolge: X={r['left']}  Y={r['top']}  {r['width']}x{r['height']}  —  altyazilarin oldugu alani surukleyerek secin")
+            f"Bolge: X={r['left']}  Y={r['top']}  {r['width']}x{r['height']}  â€”  altyazilarin oldugu alani surukleyerek secin")
 
     def _refresh_engine_desc(self):
         eng = self.engine_var.get()

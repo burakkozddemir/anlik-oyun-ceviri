@@ -1,13 +1,13 @@
 ; Anlik Oyun Ceviri - Inno Setup kurulum betigi
-; CodeFein sirketi tarafindan gelistirilmistir. Tum haklari saklidir.
+; CodeFein Studio tarafindan gelistirilmistir. Tum haklari saklidir.
 ; Derlemek:  ISCC.exe installer\installer.iss
 
 #define MyAppName "Anlik Oyun Ceviri"
-#define MyAppVersion "1.1.0"
-#define MyAppVerName "Anlik Oyun Ceviri 1.1.0 BETA"
-#define MyAppPublisher "CodeFein"
+#define MyAppVersion "1.1.1"
+#define MyAppVerName "Anlik Oyun Ceviri 1.1.1 BETA"
+#define MyAppPublisher "CodeFein Studio"
 #define MyAppExeName "AnlikOyunCeviri.exe"
-#define MyAppCopyright "Copyright (c) 2026 CodeFein. Tum haklari saklidir."
+#define MyAppCopyright "Copyright (c) 2026 CodeFein Studio. Tum haklari saklidir."
 
 [Setup]
 AppId={{A0C7E4F1-9D2E-4B6A-8F3C-5A1E2B3C4D5E}
