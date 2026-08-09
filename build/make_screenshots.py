@@ -1,6 +1,6 @@
 """Uygulama ekran goruntulerini uretir (README icin).
 
-Cikti: assets/screenshots/ana-pencere.png, hakkinda.png
+Cikti: assets/screenshots/ana-pencere.png, hakkinda.png, api-prompt.png
 """
 import ctypes
 import ctypes.wintypes
@@ -86,9 +86,10 @@ def main():
     import tkinter.font as tkfont
 
     cfg_path = os.path.join(tempfile.gettempdir(), "aoc_shot_cfg.json")
-    json.dump({"auto_detect_game": False, "region": {
-        "left": 100, "top": 100, "width": 800, "height": 120},
-        "window_size": "780x880"}, open(cfg_path, "w"))
+    json.dump({"auto_detect_game": False,
+               "api_key_prompt_done": False,
+               "region": {"left": 100, "top": 100, "width": 800, "height": 120},
+               "window_size": "780x880"}, open(cfg_path, "w"))
     os.environ["ANLIK_CONFIG"] = cfg_path
 
     from anlik_oyun_ceviri.gui import MainGUI
@@ -104,6 +105,22 @@ def main():
     hwnd_root = root.winfo_id()
     print("Ana pencere hwnd:", hwnd_root)
     capture(hwnd_root, os.path.join(OUT, "ana-pencere.png"))
+
+    g._maybe_prompt_api_key()
+    root.update_idletasks()
+    root.update()
+    prompt_hwnd = None
+    prompt_win = None
+    for w in root.winfo_children():
+        if isinstance(w, tk.Toplevel) and w.title() == "API Anahtari Ekle":
+            prompt_win = w
+            prompt_hwnd = w.winfo_id()
+            break
+    print("API prompt hwnd:", prompt_hwnd)
+    if prompt_hwnd:
+        capture(prompt_hwnd, os.path.join(OUT, "api-prompt.png"))
+        prompt_win.destroy()
+        root.update()
 
     g._show_about()
     root.update_idletasks()

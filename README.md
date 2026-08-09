@@ -43,6 +43,14 @@ anahtarli). Anti-cheat acisindan ekran kaydi almakla aynidir.
 </p>
 
 <p align="center">
+  <img src="assets/screenshots/api-prompt.png" width="430" alt="API anahtari ekleme penceresi">
+</p>
+
+<p align="center">
+  <em>Ilk acilista beliren "API Anahtari Ekle" penceresi: anahtar alanlari ve adim adim alma talimatlari</em>
+</p>
+
+<p align="center">
   <img src="assets/screenshots/hakkinda.png" width="420" alt="Hakkinda penceresi">
 </p>
 
@@ -62,6 +70,7 @@ anahtarli). Anti-cheat acisindan ekran kaydi almakla aynidir.
 - **Oyun profilleri:** Her oyunun kendi bolge/dil/gorunum ayarlari otomatik kaydedilir; oyun adi on plandaki **process (.exe)** adindan algilanir.
 - **Canli istatistik:** FPS, ceviri gecikmesi, cevrilen satir sayisi, cache isabeti, atlanan kare sayisi ve hatalar anlik gosterilir.
 - **Guvenilir yasam dongusu:** Altyazi kayboldugunda otomatik temizlenir, durdurma thread'i bekler, pipeline hatalarinda durum arayuzde bildirilir.
+- **Ilk acilis rehberi:** API anahtari tanimli degilse program acilinca "API Anahtari Ekle" penceresi belirir; DeepL / OpenAI / Gemini / DeepSeek icin anahtar alanlari ve adim adim alma talimatlari sunulur. Anahtarsiz da Google/MyMemory ile calisir.
 - **Kisayollar:** F9 = ceviriyi baslat/durdur, F10 = ekrani aninda cevir, F11 = altyaziyi goster/gizle.
 - **Gizlilik:** API anahtarlariniz Windows DPAPI ile sifrelenmis olarak saklanir; ceviri gecmisi sunucuda saklanmaz.
 
