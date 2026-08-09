@@ -6,13 +6,17 @@ __pycache__/
 venv/
 
 # Kullanici ayarlari ve onbellek (git'e girmemeli)
+# API anahtarlari da burada tutulur; asla commit etme.
 config.json
+config*.json
 cache/
+*.tmp
 
-# Test artiklari
+# Test artiklari (ceviri onbellegi icerebilir)
 __test__
 test_sel_config.json
 _manual.json
+_test.json
 
 # Derleme ciktisi
 dist/
