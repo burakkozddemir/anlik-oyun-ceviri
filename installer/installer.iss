@@ -58,3 +58,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} baslat"; Flags: no
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\cache"
 Type: filesandordirs; Name: "{app}\_internal\cache"
+; Kullanici verisi (ayarlar + ceviri onbellegi) %LOCALAPPDATA%\AnlikOyunCeviri
+; altinda tutulur. Onbellek kaldirilir; ayarlar ve API anahtarlari guvenlik
+; geregi korunur (kullanici isterse el ile silebilir).
+Type: filesandordirs; Name: "{userappdata}\AnlikOyunCeviri\cache"

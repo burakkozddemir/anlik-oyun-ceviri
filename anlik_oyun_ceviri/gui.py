@@ -50,6 +50,7 @@ class MainGUI:
         self._overlay_visible = True
         self._ui_thread = threading.current_thread()
         self._ui_tasks = queue.Queue()
+        self._pipeline_error_reported = False
 
         theme.apply_theme(root)
         self._set_window_icon(root)
@@ -67,6 +68,10 @@ class MainGUI:
         self.overlay = SubtitleOverlay(root)
         self._apply_overlay_style(init=True)
         self.overlay.update_position(self.cfg["region"])
+        if not self.overlay.click_through_ok:
+            self._log("Uyari: overlay tiklamalari oyuna geciremiyor (eski Windows surumu?).", "warn")
+        if not self.overlay.capture_excluded:
+            self._log("Uyari: overlay ekran yakalamasindan haric tutulamadi; goruntude yansima olabilir.", "warn")
 
         self._build_header()
         self._build_tabs()
@@ -623,13 +628,15 @@ class MainGUI:
         config_mod.save_config(self.base_cfg)
 
     def _auto_detect_game(self):
-        title = self._foreground_title()
-        if not title:
+        title, exe = self._foreground_process()
+        name = exe or title
+        if not name:
             self._log("On plandaki pencere algilanamadi.", "warn")
             return
-        self.game_var.set(title)
+        self.game_var.set(name)
         self._on_game_changed()
-        self._log(f"Oyun algilandi: {title}", "ok")
+        extra = f" ({title})" if title and title.lower() != name.lower() else ""
+        self._log(f"Oyun algilandi: {name}{extra}", "ok")
 
     def _auto_detect_initial(self):
         if not self.cfg.get("auto_detect_game", True):
@@ -639,19 +646,44 @@ class MainGUI:
             return
         self._auto_detect_game()
 
-    def _foreground_title(self):
+    def _foreground_process(self):
+        """On plandaki pencerenin (baslik, exe adi) bilgisini dondurur.
+
+        Profiller, degisen pencere basliklari yerine process exe adina
+        gore eslesir (orn. 'eldenring.exe').
+        """
         try:
             hwnd = ctypes.windll.user32.GetForegroundWindow()
+            if not hwnd:
+                return "", ""
             length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
             buf = ctypes.create_unicode_buffer(length + 1)
             ctypes.windll.user32.GetWindowTextW(hwnd, buf, length + 1)
             title = buf.value.strip()
+            exe = ""
+            pid = ctypes.c_ulong()
+            if ctypes.windll.user32.GetWindowThreadProcessId(
+                    hwnd, ctypes.byref(pid)):
+                PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+                handle = ctypes.windll.kernel32.OpenProcess(
+                    PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+                if handle:
+                    try:
+                        size = ctypes.c_ulong(1024)
+                        pbuf = ctypes.create_unicode_buffer(1024)
+                        if ctypes.windll.kernel32.QueryFullProcessImageNameW(
+                                handle, 0, pbuf, ctypes.byref(size)):
+                            exe = os.path.basename(pbuf.value)
+                    finally:
+                        ctypes.windll.kernel32.CloseHandle(handle)
         except Exception:  # noqa: BLE001
-            return ""
+            return "", ""
         low = title.lower()
         if any(g in low for g in GAME_FILTER) or len(title) < 2:
-            return ""
-        return title
+            title = ""
+        if not exe:
+            exe = ""
+        return title, exe.lower()
 
     # ================= Motor dongusu =================
     def _sync_cfg(self):
@@ -689,6 +721,7 @@ class MainGUI:
         self._apply_overlay_style()
         if self.pipeline:
             self.pipeline.stop()
+        self._pipeline_error_reported = False
         self.cfg["last_game_name"] = self._current_game()
         self.pipeline = TranslationPipeline(self.cfg,
                                             on_status=self._set_status,
@@ -703,6 +736,7 @@ class MainGUI:
     def _stop_pipeline(self):
         if self.pipeline:
             self.pipeline.stop()
+        self._pipeline_error_reported = False
         self.toggle_btn.configure(text="Ceviriyi Baslat  (F9)")
         self.toggle_btn.set_kind("accent")
         self._set_running(False)
@@ -734,25 +768,32 @@ class MainGUI:
         self.overlay.update_position(region)
         self.cfg["region"] = region
         self._refresh_region_text()
+        self._sync_cfg()
+        # UI thread'deki degiskenleri worker'a kopyala; thread icinde
+        # Tkinter degiskenleri okunmaz.
+        snapshot = dict(self.cfg)
+        snapshot["region"] = dict(region)
+        monitor = snapshot.get("monitor", 0)
+        source, target = snapshot["source_lang"], snapshot["target_lang"]
 
         def work():
             try:
-                img = grab_region(region, self.cfg.get("monitor", 0))
-                raw = self.pipeline.ocr.read(img) if self.pipeline else None
+                img = grab_region(region, monitor)
+                raw = self.pipeline.ocr.read(img) if (self.pipeline and self.pipeline.running) else None
                 if raw is None:
                     from .ocr import OcrEngine
-                    raw = OcrEngine(self.cfg).read(img)
+                    raw = OcrEngine(snapshot).read(img)
                 lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
                 if not lines:
                     self.root.after(0, lambda: self._set_status("Bolgede metin bulunamadi."))
                     return
-                self._sync_cfg()
-                tr = Translator(self.cfg, "_manual.json")
-                out = tr.translate_lines(lines, source=self.cfg["source_lang"],
-                                         target=self.cfg["target_lang"])
+                cache_file = os.path.join(config_mod.cache_dir(), "_manual.json")
+                tr = Translator(snapshot, cache_file)
+                out = tr.translate_lines(lines, source=source, target=target)
                 self.root.after(0, lambda: self._show_manual(out, raw))
             except Exception as exc:  # noqa: BLE001
-                self.root.after(0, lambda: self._log(f"Manuel ceviri hatasi: {exc}", "error"))
+                msg = str(exc)
+                self.root.after(0, lambda: self._log(f"Manuel ceviri hatasi: {msg}", "error"))
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -765,23 +806,38 @@ class MainGUI:
     def _test_engine(self):
         eng = self.engine_var.get()
         self._sync_cfg()
-        try:
-            tr = Translator(self.cfg, "_test.json")
-            out = tr.translate("Welcome to the village, hero!", "en", "tr", engine=eng)
-            self._set_output(f"Motor testi basarili:\n{out}")
-            self._log(f"{eng} motoru testi: OK", "ok")
-        except Exception as exc:
-            self._log(f"{eng} testi basarisiz: {exc}", "error")
+        snapshot = dict(self.cfg)
+        cache_file = os.path.join(config_mod.cache_dir(), "_test.json")
+
+        def work():
+            try:
+                tr = Translator(snapshot, cache_file)
+                out = tr.translate("Welcome to the village, hero!", "en", "tr", engine=eng)
+                self.root.after(0, lambda: self._set_output(f"Motor testi basarili:\n{out}"))
+                self.root.after(0, lambda: self._log(f"{eng} motoru testi: OK", "ok"))
+            except Exception as exc:  # noqa: BLE001
+                msg = str(exc)
+                self.root.after(0, lambda: self._log(f"{eng} testi basarisiz: {msg}", "error"))
+
+        threading.Thread(target=work, daemon=True).start()
 
     def _test_openai(self):
         self._sync_cfg()
-        try:
-            tr = Translator(self.cfg, "_test.json")
-            out = tr.translate("Hello there!", "en", "tr", engine="openai")
-            self._set_output(f"OpenAI uyumlu API testi:\n{out}")
-            self._log(f"OpenAI uyumlu test: OK ({self.cfg['api_keys']['openai_model']})", "ok")
-        except Exception as exc:
-            self._log(f"OpenAI testi basarisiz: {exc}", "error")
+        snapshot = dict(self.cfg)
+        cache_file = os.path.join(config_mod.cache_dir(), "_test.json")
+
+        def work():
+            try:
+                tr = Translator(snapshot, cache_file)
+                out = tr.translate("Hello there!", "en", "tr", engine="openai")
+                self.root.after(0, lambda: self._set_output(f"OpenAI uyumlu API testi:\n{out}"))
+                self.root.after(0, lambda: self._log(
+                    f"OpenAI uyumlu test: OK ({snapshot['api_keys'].get('openai_model')})", "ok"))
+            except Exception as exc:  # noqa: BLE001
+                msg = str(exc)
+                self.root.after(0, lambda: self._log(f"OpenAI testi basarisiz: {msg}", "error"))
+
+        threading.Thread(target=work, daemon=True).start()
 
     def _set_output(self, text):
         self.output_text.configure(state="normal")
@@ -831,6 +887,11 @@ class MainGUI:
             try:
                 while True:
                     msg = self.pipeline.queue.get_nowait()
+                    if msg.get("clear"):
+                        self._set_output("")
+                        self.overlay.hide()
+                        self._set_status("Altyazi beklemede...")
+                        continue
                     lines = msg.get("lines", [])
                     self._set_output("\n".join(lines))
                     self.overlay.show(lines, opacity=float(self.opacity_var.get()))
@@ -839,12 +900,18 @@ class MainGUI:
                         self._set_status(f"{lat} ms | {msg.get('raw', '')[:60]}")
             except queue.Empty:
                 pass
-            if not self.pipeline.running:
+            if self.pipeline.state == "failed" and not self._pipeline_error_reported:
+                self._pipeline_error_reported = True
                 self._stop_pipeline()
+                self._log(f"Pipeline durdu: {self.pipeline.error}", "error")
+                self._set_status(f"HATA: {self.pipeline.error}", error=True)
+            elif self.pipeline.state == "running":
+                self._pipeline_error_reported = False
             st = self.pipeline.stats
             self.sb_stats.configure(
                 text=f"FPS {st['fps']:.1f} | Gecikme {st['latency_ms']} ms | "
-                     f"Ceviri {st['translated']} | Cache {st['cache_size']}")
+                     f"Ceviri {st['translated']} | Cache {st['cache_size']} | "
+                     f"Atla {st['skipped']}")
             if hasattr(self, "stat_widgets"):
                 self.stat_widgets["fps"].configure(text=f"{st['fps']:.1f}")
                 self.stat_widgets["latency"].configure(text=f"{st['latency_ms']} ms")

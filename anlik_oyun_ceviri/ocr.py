@@ -136,6 +136,19 @@ class OcrEngine:
         mapped = [TESS_LANG_ALIASES.get(p, p) for p in parts]
         return "+".join(mapped) if mapped else "eng"
 
+    def _tess_config(self, tessdata):
+        """--psm ve --tessdata-dir iceren Tesseract komut satiri."""
+        try:
+            psm = int(self.config.get("psm", 6))
+            psm = psm if 0 <= psm <= 13 else 6
+        except (TypeError, ValueError):
+            psm = 6
+        cfg = [f"--psm {psm}"]
+        if tessdata:
+            path = os.path.abspath(tessdata).replace("\\", "\\\\").replace('"', '\\"')
+            cfg.append(f'--tessdata-dir "{path}"')
+        return " ".join(cfg)
+
     def _read_tesseract(self, img):
         img = self._preprocess(img)
         tessdata = self.config.get("tessdata_dir") or ""
@@ -145,13 +158,13 @@ class OcrEngine:
                 if os.path.isdir(cand):
                     tessdata = cand
                     break
-        tessdata = os.path.abspath(tessdata)
-        if os.path.isdir(tessdata):
-            os.environ["TESSDATA_PREFIX"] = tessdata
+        timeout = self.config.get("ocr_timeout_s", 6)
         try:
             data = pytesseract.image_to_data(
-                img, lang=self._tess_langs(), config="--psm 6",
+                img, lang=self._tess_langs(),
+                config=self._tess_config(tessdata),
                 output_type=pytesseract.Output.DICT,
+                timeout=timeout,
             )
         except pytesseract.TesseractError as exc:
             raise RuntimeError(

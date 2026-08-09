@@ -50,11 +50,26 @@ def available_monitors():
                 for i, m in enumerate(sct.monitors[1:])]
 
 
+def monitor_bounds(monitor_index=0):
+    """Secili monitörun sinirlarini doner (sanal masaustu koordinatlari)."""
+    if mss is None:
+        return {"left": 0, "top": 0, "width": 0, "height": 0}
+    with mss.mss() as sct:
+        monitors = sct.monitors[1:]
+        if not monitors:
+            return {"left": 0, "top": 0, "width": 0, "height": 0}
+        idx = max(0, min(int(monitor_index), len(monitors) - 1))
+        m = monitors[idx]
+        return {"left": m["left"], "top": m["top"],
+                "width": m["width"], "height": m["height"]}
+
+
 def grab_region(region, monitor_index=0):
     """Belirtilen bolgenin goruntusunu PIL Image olarak dondurur.
 
     Bolge, sanal masaustu (tum ekranlar) koordinat sistemindedir;
-    negatif koordinatlar da desteklenir.
+    negatif koordinatlar da desteklenir. Tek seferlik yakalamalar
+    icindir; surekli yakalama icin CaptureSession kullanin.
     """
     if mss is None:
         raise RuntimeError("mss kutuphanesi yuklu degil. 'pip install mss' calistirin.")
@@ -67,6 +82,41 @@ def grab_region(region, monitor_index=0):
                          "width": width, "height": height})
     img = Image.frombytes("RGB", shot.size, shot.bgra, "raw", "BGRX")
     return img
+
+
+class CaptureSession:
+    """Pipeline omru boyunca tek MSS oturumu; her karede yeni oturum
+    acmaya gerek kalmaz (GDI baglantisinin maliyeti dusurulur).
+    """
+
+    def __init__(self):
+        if mss is None:
+            self._sct = None
+        else:
+            self._sct = mss.mss()
+        self._closed = False
+
+    def grab(self, region):
+        if self._sct is None:
+            raise RuntimeError("mss kutuphanesi yuklu degil. 'pip install mss' calistirin.")
+        if self._closed:
+            raise RuntimeError("Yakalama oturumu kapatilmis.")
+        left = int(region["left"])
+        top = int(region["top"])
+        width = max(1, int(region["width"]))
+        height = max(1, int(region["height"]))
+        shot = self._sct.grab({"left": left, "top": top,
+                               "width": width, "height": height})
+        img = Image.frombytes("RGB", shot.size, shot.bgra, "raw", "BGRX")
+        return img
+
+    def close(self):
+        if self._sct is not None and not self._closed:
+            try:
+                self._sct.close()
+            except Exception:  # noqa: BLE001
+                pass
+        self._closed = True
 
 
 def virtual_desktop():

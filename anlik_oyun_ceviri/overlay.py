@@ -10,6 +10,10 @@ WS_EX_TOOLWINDOW = 0x00000080
 WS_EX_NOACTIVATE = 0x08000000
 GWL_EXSTYLE = -20
 
+# Windows 10 2004+: pencereyi ekran yakalama API'lerinden (OCR dahil)
+# haric tutar; overlay kendi metnini tekrar OCR'lamaz.
+WDA_EXCLUDEFROMCAPTURE = 0x11
+
 TRANSPARENT_COLOR = "#010203"
 BOX_BG = "#0d0f14"
 
@@ -19,8 +23,18 @@ def _apply_click_through(hwnd):
         style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
         style |= WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE
         ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style)
+        return True
     except Exception:  # noqa: BLE001
-        pass
+        return False
+
+
+def _exclude_from_capture(hwnd):
+    """Overlay'i ekran yakalamasindan (mss/BitBlt) haric tutmayi dener."""
+    try:
+        return bool(ctypes.windll.user32.SetWindowDisplayAffinity(
+            hwnd, WDA_EXCLUDEFROMCAPTURE))
+    except Exception:  # noqa: BLE001
+        return False
 
 
 class SubtitleOverlay:
@@ -44,6 +58,8 @@ class SubtitleOverlay:
         self._max_lines = 3
         self._positioned = False
         self._visible = True
+        self._click_through = False
+        self._excluded = False
         self._apply_style()
 
     def _apply_style(self):
@@ -53,9 +69,18 @@ class SubtitleOverlay:
             if not hwnd:
                 hwnd = self.win.winfo_id()
             if hwnd:
-                _apply_click_through(hwnd)
+                self._click_through = _apply_click_through(hwnd)
+                self._excluded = _exclude_from_capture(hwnd)
         except tk.TclError:
             pass
+
+    @property
+    def click_through_ok(self):
+        return self._click_through
+
+    @property
+    def capture_excluded(self):
+        return self._excluded
 
     def set_style(self, font_family, font_size, color, bg_color, mode,
                   max_lines):
@@ -67,6 +92,7 @@ class SubtitleOverlay:
         self._bg = bg_color or "#000000"
         self._mode = mode if mode in ("transparent", "box") else "transparent"
         self._max_lines = max(1, int(max_lines))
+        self._rebuild_background()
 
     def update_position(self, region):
         w = max(1, int(region["width"]))
@@ -95,8 +121,7 @@ class SubtitleOverlay:
         if not self._positioned or not self._visible:
             return
         self._alpha = max(0.05, min(1.0, float(opacity)))
-        if self._mode != "box":
-            self._rebuild_background()
+        self._rebuild_background()
         if len(lines) > self._max_lines:
             lines = lines[-self._max_lines:]
         wrap = max(50, int(self.win.winfo_width()) - 24)

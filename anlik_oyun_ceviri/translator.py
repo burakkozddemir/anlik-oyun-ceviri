@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 import threading
 import time
 
@@ -45,9 +46,16 @@ ERROR_PAGE_MARKERS = (
 
 _LAST_BLOCK = {}
 
+# Prompt/model/gerec degisince eski cache girdilerini gecersiz kilar.
+CACHE_VERSION = 2
 
-def hash_key(source, target, engine, text):
-    raw = f"{source}|{target}|{engine}|{text}"
+# Toplu ceviride satirlari eslestirmek icin kullanilan isaretleyiciler.
+# (.*) yeni satira kadar okur; boylece her [[i]] bir satiri yakalar.
+MARKER_RE = re.compile(r"\[\[(\d+)\]\]\s*(.*)")
+
+
+def hash_key(source, target, engine, text, extra=""):
+    raw = f"{CACHE_VERSION}|{source}|{target}|{engine}|{extra}|{text}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:32]
 
 
@@ -108,15 +116,19 @@ class Translator:
         """Birden fazla satiri tek istekte cevirir (onbellekli).
 
         Cache isabetli ve isabetsiz satirlarin satir sirasi korunur.
+        Toplu ceviride satirlar [[0]], [[1]]... isaretleyicileriyle
+        gonderilir; motor isaretleyicileri bozarsa satir satir yedek
+        cevirim yapilir.
         """
         engine = engine or self.config.get("engine", "google")
+        extra = self._cache_extra(engine)
         results = [None] * len(lines)
         missing, missing_idx = [], []
         for i, ln in enumerate(lines):
             ln = ln.strip()
             if not ln:
                 continue
-            key = hash_key(source, target, engine, ln)
+            key = hash_key(source, target, engine, ln, extra)
             cached = self.cache.get(key)
             if cached and time.time() - cached.get("t", 0) < 2592000:
                 results[i] = cached["text"]
@@ -135,11 +147,10 @@ class Translator:
                 block = self._translate(missing[0], source, target, engine)
                 out_lines = [block]
             else:
-                joined = "\n".join(missing)
-                block = self._translate(joined, source, target, engine)
-                out_lines = [ln.strip() for ln in block.splitlines()
-                             if ln.strip()]
-                if len(out_lines) != len(missing):
+                marked = "\n".join(f"[[{i}]] {ln}" for i, ln in enumerate(missing))
+                block = self._translate(marked, source, target, engine)
+                out_lines = self._extract_marked(block, len(missing))
+                if out_lines is None:
                     out_lines = [self._translate(ln, source, target, engine)
                                  for ln in missing]
         except Exception as exc:
@@ -151,11 +162,38 @@ class Translator:
         self.stats["calls"] += 1
         self.stats["total_latency_ms"] += latency_ms
         for ln, out, idx in zip(missing, out_lines, missing_idx):
-            self.cache.set(hash_key(source, target, engine, ln),
+            self.cache.set(hash_key(source, target, engine, ln, extra),
                            {"text": out, "t": time.time(),
                             "latency_ms": latency_ms})
             results[idx] = out
         return [r for r in results if r is not None]
+
+    def translate_lines_measured(self, lines, source, target, engine=None):
+        """Satir listesini cevirir ve toplam gecikmeyi ms cinsinden doner."""
+        t0 = time.time()
+        out = self.translate_lines(lines, source, target, engine)
+        return out, int((time.time() - t0) * 1000)
+
+    def _cache_extra(self, engine):
+        if engine == "openai":
+            keys = self._keys()
+            return f"{keys.get('openai_model', '')}|{keys.get('openai_base_url', '')}"
+        return ""
+
+    @staticmethod
+    def _extract_marked(block, count):
+        """[[i]] isaretleyicili ceviriyi satirlara ayirir.
+
+        Tum isaretleyiciler dogru sirada bulunamazsa None doner ve
+        cagiran taraf satir satir yedek cevirime gecer.
+        """
+        found = {}
+        for m in MARKER_RE.finditer(block):
+            idx = int(m.group(1))
+            found[idx] = m.group(2).strip()
+        if len(found) != count or any(i not in found for i in range(count)):
+            return None
+        return [found[i] for i in range(count)]
 
     def translate(self, text, source, target, engine=None):
         lines = self.translate_lines([text], source, target, engine)
