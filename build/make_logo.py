@@ -1,7 +1,7 @@
-"""Anlik Oyun Ceviri logosu uretir: assets/logo.png ve assets/logo.ico.
+"""Anlık Oyun Çeviri logosu üretir: assets/logo.png ve assets/logo.ico.
 
-Tasarim: degrade arka plan uzerinde isik parlamasi, vurgu halkasi ve
-icinde "A" (Latin) + "文" (CJK) tasiyan konusma balonu - ceviri metafosu.
+Tasarım: degrade arka plan üzerinde ışık parlaması, vurgu halkası ve
+içinde "A" (Latin) + "文" (CJK) taşıyan konuşma balonu - çeviri metaforu.
 """
 import os
 

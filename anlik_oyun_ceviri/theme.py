@@ -1,6 +1,6 @@
-"""Modern koyu tema: renk paleti, ttk stilleri ve ozel widget yardimcilari.
+"""Modern koyu tema: renk paleti, ttk stilleri ve özel widget yardımcıları.
 
-Flat design: derin kontrast, yumusak vurgular, ince cerceveler ve
+Flat design: derin kontrast, yumuşak vurgular, ince çerçeveler ve
 hafif hover/active geri bildirimleri.
 """
 import tkinter as tk
@@ -143,7 +143,7 @@ def card(parent, bg=CARD, **kw):
 
 
 def section(parent, text, bg=CARD):
-    """Vurgu cubuklu modern bolum basligi."""
+    """Vurgu çubuklu modern bölüm başlığı."""
     wrap = tk.Frame(parent, bg=bg)
     bar = tk.Frame(wrap, bg=ACCENT, width=3, height=14)
     bar.pack(side="left", padx=(12, 8), pady=(10, 4))
@@ -155,7 +155,7 @@ def section(parent, text, bg=CARD):
 
 
 class ModernButton(tk.Button):
-    """Hover ve basili durum destekli modern flat buton."""
+    """Hover ve basılı durum destekli modern flat buton."""
 
     def __init__(self, parent, text, command=None, kind="secondary", **kw):
         palette = {
@@ -211,7 +211,7 @@ class ModernButton(tk.Button):
 
 
 def stat_cell(parent, bg=CARD_2):
-    """Ust kenarinda vurgu seridi olan istatistik hucresi."""
+    """Üst kenarında vurgu şeridi olan istatistik hücresi."""
     cell = tk.Frame(parent, bg=bg)
     strip = tk.Frame(cell, bg=ACCENT_DIM, height=3)
     strip.pack(fill="x")

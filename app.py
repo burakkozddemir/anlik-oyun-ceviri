@@ -1,7 +1,7 @@
-"""Anlik Oyun Ceviri - giris noktasi.
+"""Anlık Oyun Çeviri - giriş noktası.
 
-Kullanim:  python app.py
-Kisayol:   F9 = baslat/durdur
+Kullanım:  python app.py
+Kısayol:   F9 = başlat/durdur
 """
 import ctypes
 import sys

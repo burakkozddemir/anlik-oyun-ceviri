@@ -1,13 +1,13 @@
-; Anlik Oyun Ceviri - Inno Setup kurulum betigi
-; CodeFein Studio tarafindan gelistirilmistir. Tum haklari saklidir.
+; Anlık Oyun Çeviri - Inno Setup kurulum betiği
+; CodeFein Studio tarafından geliştirilmiştir. Tüm hakları saklıdır.
 ; Derlemek:  ISCC.exe installer\installer.iss
 
-#define MyAppName "Anlik Oyun Ceviri"
+#define MyAppName "Anlık Oyun Çeviri"
 #define MyAppVersion "1.1.1"
-#define MyAppVerName "Anlik Oyun Ceviri 1.1.1 BETA"
+#define MyAppVerName "Anlık Oyun Çeviri 1.1.1 BETA"
 #define MyAppPublisher "CodeFein Studio"
 #define MyAppExeName "AnlikOyunCeviri.exe"
-#define MyAppCopyright "Copyright (c) 2026 CodeFein Studio. Tum haklari saklidir."
+#define MyAppCopyright "Copyright (c) 2026 CodeFein Studio. Tüm hakları saklıdır."
 
 [Setup]
 AppId={{A0C7E4F1-9D2E-4B6A-8F3C-5A1E2B3C4D5E}
@@ -18,7 +18,7 @@ AppPublisher={#MyAppPublisher}
 AppCopyright={#MyAppCopyright}
 VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
-VersionInfoDescription={#MyAppName} - Gercek zamanli AI oyun ceviri programi
+VersionInfoDescription={#MyAppName} - Gerçek zamanlı AI oyun çeviri programı
 VersionInfoOriginalFileName=AnlikOyunCeviri-Kurulum.exe
 DefaultDirName={localappdata}\Programs\AnlikOyunCeviri
 DefaultGroupName={#MyAppName}
@@ -40,7 +40,7 @@ CloseApplications=force
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Masaustu kisa yolu olustur"; GroupDescription: "Kisayollar:"
+Name: "desktopicon"; Description: "Masaüstü kısayolu oluştur"; GroupDescription: "Kısayollar:"
 
 [Files]
 Source: "..\dist\AnlikOyunCeviri\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
@@ -58,7 +58,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{#MyAppName} baslat"; Flags: no
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\cache"
 Type: filesandordirs; Name: "{app}\_internal\cache"
-; Kullanici verisi (ayarlar + ceviri onbellegi) %LOCALAPPDATA%\AnlikOyunCeviri
-; altinda tutulur. Onbellek kaldirilir; ayarlar ve API anahtarlari guvenlik
-; geregi korunur (kullanici isterse el ile silebilir).
+; Kullanıcı verisi (ayarlar + çeviri önbelleği) %LOCALAPPDATA%\AnlikOyunCeviri
+; altında tutulur. Önbellek kaldırılır; ayarlar ve API anahtarları güvenlik
+; gereği korunur (kullanıcı isterse el ile silebilir).
 Type: filesandordirs; Name: "{userappdata}\AnlikOyunCeviri\cache"

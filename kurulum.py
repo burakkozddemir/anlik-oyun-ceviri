@@ -1,10 +1,10 @@
-"""Anlik Oyun Ceviri kurulum betigi.
+"""Anlık Oyun Çeviri kurulum betiği.
 
 1) Gerekli Python paketlerini kurar.
-2) Tesseract OCR kurulumunu denetler, yoksa kurulmasi icin talimat verir
+2) Tesseract OCR kurulumunu denetler, yoksa kurulması için talimat verir
    (Windows: winget install UB-Mannheim.TesseractOCR).
 
-CodeFein Studio tarafindan gelistirilmistir. Tum haklari saklidir.
+CodeFein Studio tarafından geliştirilmiştir. Tüm hakları saklıdır.
 """
 import shutil
 import subprocess
@@ -14,7 +14,7 @@ from anlik_oyun_ceviri import __app_name__, __beta__, __company__, __copyright__
 
 REQUIREMENTS = ["requirements.txt"]
 EXTRA_OPTIONAL = [
-    ("winocr", "Windows yerlesik OCR yedegi icin (istege bagli)"),
+    ("winocr", "Windows yerleşik OCR yedeği için (isteğe bağlı)"),
 ]
 
 
@@ -28,11 +28,11 @@ def check_tesseract():
     if exe:
         print(f"[OK] Tesseract bulundu: {exe}")
         return True
-    print("[UYARI] Tesseract bulunamadi.")
-    print("  Kurulum secenekleri:")
+    print("[UYARI] Tesseract bulunamadı.")
+    print("  Kurulum seçenekleri:")
     print("    - winget install UB-Mannheim.TesseractOCR")
     print("    - https://github.com/UB-Mannheim/tesseract/wiki adresinden indirin")
-    print("  Kurduktan sonra config.json icindeki 'tesseract_cmd' alanina exe yolunu yazabilirsiniz.")
+    print("  Kurduktan sonra config.json içindeki 'tesseract_cmd' alanına exe yolunu yazabilirsiniz.")
     return False
 
 
@@ -42,7 +42,7 @@ def main():
     print("Python:", sys.version.split()[0])
     ok = run_pip(["install", "-r", REQUIREMENTS[0]])
     if ok.returncode != 0:
-        print("[HATA] Paket kurulumu basarisiz.")
+        print("[HATA] Paket kurulumu başarısız.")
         sys.exit(1)
 
     print("\n[OK] Ana paketler kuruldu.")
@@ -51,13 +51,13 @@ def main():
         if r.returncode == 0:
             print(f"[OK] {pkg} kuruldu ({desc}).")
         else:
-            print(f"[UYARI] {pkg} kurulamadi ({desc}). Devam edilebilir.")
+            print(f"[UYARI] {pkg} kurulamadı ({desc}). Devam edilebilir.")
 
-    print("\n--- OCR kontrolu ---")
+    print("\n--- OCR kontrolü ---")
     check_tesseract()
 
-    print("\nKurulum tamam. Calistirmak icin:  python app.py")
-    print("Kisayol: F9 = ceviriyi baslat/durdur")
+    print("\nKurulum tamam. Çalıştırmak için:  python app.py")
+    print("Kısayol: F9 = çeviriyi başlat/durdur")
     print()
     print(__copyright__)
 

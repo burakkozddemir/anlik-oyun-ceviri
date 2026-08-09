@@ -1,8 +1,8 @@
-"""Arka planda calisan ceviri hatti: ekran yakala -> OCR -> cevir -> kuyruk.
+"""Arka planda çalışan çeviri hattı: ekran yakala -> OCR -> çevir -> kuyruk.
 
-Yasam dongusu: tek daemon thread, durum makinesi (stopped/running/failed),
-durdurmada join, sadece en guncel sonucu tasiyan sinirli kuyruk ve
-degişmeyen karelerde OCR atlamasi (goruntu hash'i) icerir.
+Yaşam döngüsü: tek daemon thread, durum makinesi (stopped/running/failed),
+durdurmada join, sadece en güncel sonucu taşıyan sınırlı kuyruk ve
+değişmeyen karelerde OCR atlaması (görüntü hash'i) içerir.
 """
 import hashlib
 import os
@@ -11,6 +11,7 @@ import time
 import queue
 
 from . import config as config_mod
+from . import i18n
 from .screen import CaptureSession
 from .ocr import OcrEngine
 from .translator import Translator
@@ -25,7 +26,8 @@ class TranslationPipeline:
         self.config = config
         self.on_status = on_status
         self.on_log = on_log
-        # Yalnizca en guncel sonuc anlamlidir; eski mesajlar dusurulur.
+        self._lang = config.get("language", "tr")
+        # Yalnızca en güncel sonuç anlamlıdır; eski mesajlar düşürülür.
         self.queue = queue.Queue(maxsize=1)
         self._state = STATE_STOPPED
         self._thread = None
@@ -74,7 +76,8 @@ class TranslationPipeline:
         if self._state == STATE_RUNNING:
             return
         if not self.ocr.is_ready:
-            raise RuntimeError("OCR motoru hazir degil.\n" + self.ocr.engine_help())
+            raise RuntimeError(i18n.t("OCR motoru hazır değil.\n{help}", self._lang,
+                                      help=self.ocr.engine_help(self._lang)))
         self._stop.clear()
         self._generation += 1
         self._state = STATE_RUNNING
@@ -83,7 +86,7 @@ class TranslationPipeline:
         self._thread.start()
 
     def stop(self, join=True):
-        """Durdurur ve thread'in sonlanmasini bekler (en fazla 5 sn)."""
+        """Durdurur ve thread'in sonlanmasını bekler (en fazla 5 sn)."""
         self._stop.set()
         if join and self._thread and self._thread.is_alive() and \
                 self._thread is not threading.current_thread():
@@ -99,10 +102,10 @@ class TranslationPipeline:
             self.on_log(text, kind)
 
     def _put(self, gen, msg):
-        """Sinirli kuyruk: doluysa en eski mesaj dusurulur.
+        """Sınırlı kuyruk: doluysa en eski mesaj düşürülür.
 
-        Eski nesil thread'lerin (stop sonrasi kalanlar) mesajlari
-        reddedilir, boylece yeni oturumun ciktisi kirlenmez.
+        Eski nesil thread'lerin (stop sonrası kalanlar) mesajları
+        reddedilir, böylece yeni oturumun çıktısı kirlenmez.
         """
         if gen != self._generation:
             return
@@ -120,7 +123,7 @@ class TranslationPipeline:
 
     @staticmethod
     def _frame_hash(img):
-        """Kucultulmus karenin ozeti; degisiklik algilamada kullanilir."""
+        """Küçültülmüş karenin özeti; değişiklik algılamada kullanılır."""
         try:
             small = img.resize((32, 32))
             return hashlib.md5(small.tobytes()).hexdigest()
@@ -157,7 +160,7 @@ class TranslationPipeline:
                     raw = self.ocr.read(img)
                 except Exception as exc:  # noqa: BLE001
                     self._stats["errors"] += 1
-                    self._log(f"OCR hatasi: {exc}", "error")
+                    self._log(i18n.t("OCR hatası: {exc}", self._lang, exc=exc), "error")
                     self._sleep_until(interval, t_start)
                     continue
 
@@ -169,7 +172,7 @@ class TranslationPipeline:
                     self._frames_since_reset = 0
                     self._reset_ts = now
 
-                # Altyazi kayboldu: eski ceviriyi temizle.
+                # Altyazı kayboldu: eski çeviriyi temizle.
                 if not raw:
                     self._empty_frames += 1
                     if self._empty_frames >= empty_stop and self._last_translated:
@@ -183,12 +186,12 @@ class TranslationPipeline:
                 if raw and raw != self._last_raw:
                     self._last_raw = raw
                     lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
-                    # Tek karakterlik "gurultu" cevirime girmez; dongu yine de uyur.
+                    # Tek karakterlik "gürültü" çevirime girmez; döngü yine de uyur.
                     if len(lines) == 1 and len(lines[0]) < 2:
                         self._empty_frames = 0
                         self._sleep_until(interval, t_start)
                         continue
-                    self._report(f"OKUNAN: {raw[:90]}")
+                    self._report(i18n.t("OKUNAN: {raw}", self._lang, raw=raw[:90]))
                     try:
                         translated, latency_ms = self.translator.translate_lines_measured(
                             lines,
@@ -202,7 +205,7 @@ class TranslationPipeline:
                         self._stats["latency_ms"] = int(self._ema_latency)
                     except Exception as exc:  # noqa: BLE001
                         self._stats["errors"] += 1
-                        self._log(f"Ceviri hatasi: {exc}", "error")
+                        self._log(i18n.t("Çeviri hatası: {exc}", self._lang, exc=exc), "error")
                     else:
                         self._last_translated = translated
                         self._put(gen, {"lines": translated,
@@ -215,8 +218,8 @@ class TranslationPipeline:
             if gen == self._generation:
                 self._state = STATE_FAILED
                 self._error = str(exc)
-                self._log(f"Pipeline hatasi: {exc}", "error")
-                self._report(f"HATA: {exc}")
+                self._log(i18n.t("Pipeline hatası: {exc}", self._lang, exc=exc), "error")
+                self._report(i18n.t("HATA: {exc}", self._lang, exc=exc))
         finally:
             if session is not None:
                 session.close()
@@ -224,7 +227,7 @@ class TranslationPipeline:
                 self._state = STATE_STOPPED
 
     def _sleep_until(self, interval, t_start):
-        """Kare suresi kadar bekler; hatali yollarda bile en az 20 ms uyur."""
+        """Kare süresi kadar bekler; hatalı yollarda bile en az 20 ms uyur."""
         elapsed = (time.time() - t_start) * 1000
         sleep = max(0.02, (interval - elapsed) / 1000.0)
         self._stop.wait(sleep)

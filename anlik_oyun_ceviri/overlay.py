@@ -1,4 +1,4 @@
-"""Oyun uzerine binen saydam, tiklamasi oyuna gecen overlay penceresi."""
+"""Oyun üzerine binen saydam, tıklaması oyuna geçen overlay penceresi."""
 import ctypes
 import tkinter as tk
 
@@ -11,7 +11,7 @@ WS_EX_NOACTIVATE = 0x08000000
 GWL_EXSTYLE = -20
 
 # Windows 10 2004+: pencereyi ekran yakalama API'lerinden (OCR dahil)
-# haric tutar; overlay kendi metnini tekrar OCR'lamaz.
+# hariç tutar; overlay kendi metnini tekrar OCR'lamaz.
 WDA_EXCLUDEFROMCAPTURE = 0x11
 
 TRANSPARENT_COLOR = "#010203"
@@ -29,7 +29,7 @@ def _apply_click_through(hwnd):
 
 
 def _exclude_from_capture(hwnd):
-    """Overlay'i ekran yakalamasindan (mss/BitBlt) haric tutmayi dener."""
+    """Overlay'i ekran yakalamasından (mss/BitBlt) hariç tutmayı dener."""
     try:
         return bool(ctypes.windll.user32.SetWindowDisplayAffinity(
             hwnd, WDA_EXCLUDEFROMCAPTURE))

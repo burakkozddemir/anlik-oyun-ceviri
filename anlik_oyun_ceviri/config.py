@@ -1,10 +1,10 @@
 """Ayarlarin yuklenmesi ve kaydedilmesi.
 
-Kullanici verileri (config.json + cache) uygulama klasoru yerine
-%LOCALAPPDATA%\\AnlikOyunCeviri altinda tutulur; boylece kurulum
-dizini salt-okunur olsa da uygulama calisabilir. API anahtarlari
-Windows DPAPI ile sifrelenerek diskte saklanir (CTRL/credential
-yoksa duz metin yedege dusulur).
+Kullanıcı verileri (config.json + cache) uygulama klasörü yerine
+%LOCALAPPDATA%\\AnlikOyunCeviri altında tutulur; böylece kurulum
+dizini salt-okunur olsa da uygulama çalışabilir. API anahtarları
+Windows DPAPI ile şifrelenerek diskte saklanır (CTRL/credential
+yoksa düz metin yedeğe düşülür).
 """
 import base64
 import ctypes
@@ -16,7 +16,7 @@ import time
 
 APP_NAME = "Anlik Oyun Ceviri"
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Kullanici verisi klasoru icin dosya sistemi guvenli ad (bosluksuz).
+# Kullanıcı verisi klasörü için dosya sistemi güvenli ad (boşluksuz).
 USER_DIR_NAME = "AnlikOyunCeviri"
 
 # Ayarlar bicimi degisince eski dosyalari gecersiz kilar.
@@ -57,6 +57,7 @@ DEFAULT_CONFIG = {
     "start_hidden": False,
     "last_game_name": "",
     "auto_detect_game": True,
+    "language": "tr",
     "api_key_prompt_done": False,
     "window_size": "720x840",
     "window_pos": "",
@@ -72,7 +73,7 @@ PROFILE_KEYS = [
 
 
 def user_data_dir():
-    """Kullanici verilerinin tutulacagi klasor (env ile ezilebilir)."""
+    """Kullanıcı verilerinin tutulacağı klasör (env ile ezilebilir)."""
     override = os.environ.get("ANLIK_USER_DIR")
     if override:
         d = override
@@ -91,7 +92,7 @@ def config_path():
 
 
 def legacy_config_path():
-    """Eski surumlerin uygulama klasorune yazdigi yol (tasima icin)."""
+    """Eski sürümlerin uygulama klasörüne yazdığı yol (taşıma için)."""
     return os.path.join(APP_DIR, "config.json")
 
 
@@ -131,7 +132,7 @@ def _backup_corrupt(path):
         if os.path.exists(path):
             stamp = time.strftime("%Y%m%d-%H%M%S")
             os.replace(path, path + f".corrupt-{stamp}")
-            print(f"[UYARI] Ayar dosyasi bozuktu; yedeklendi: {path}.corrupt-{stamp}")
+            print(f"[UYARI] Ayar dosyası bozuktu; yedeklendi: {path}.corrupt-{stamp}")
     except OSError:
         pass
 
@@ -147,7 +148,7 @@ def _migrate_legacy():
             return
         os.makedirs(os.path.dirname(target), exist_ok=True)
         os.replace(legacy, target)
-        print(f"[BILGI] Eski ayar dosyasi yeni konuma tasindi: {target}")
+        print(f"[BILGI] Eski ayar dosyası yeni konuma taşındı: {target}")
     except OSError:
         pass
 
@@ -173,7 +174,6 @@ def save_config(cfg):
             os.replace(tmp, path)
     except OSError as exc:
         print(f"[HATA] Ayarlar kaydedilemedi: {exc}")
-
 
 def cache_dir():
     d = os.path.join(user_data_dir(), "cache")
@@ -260,7 +260,7 @@ def _dpapi_unprotect(blob: bytes) -> bytes:
 
 
 def _encrypt_keys(keys):
-    """Anahtar sozlugunu DPAPI ile sifreler; basarisizsa None doner."""
+    """Anahtar sözlüğünü DPAPI ile şifreler; başarısızsa None döner."""
     if not _dpapi_available():
         return None
     if not any(keys.values()):
@@ -276,7 +276,7 @@ def _encrypt_keys(keys):
 
 
 def _decrypt_keys(enc):
-    """Sifreli anahtar sozlugunu geri cevirir; basarisizsa bos doner."""
+    """Şifreli anahtar sözlüğünü geri çevirir; başarısızsa boş döner."""
     blob = enc.get("dpapi")
     if not blob:
         return {}

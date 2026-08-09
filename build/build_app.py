@@ -1,11 +1,11 @@
-r"""Anlik Oyun Ceviri paketleme betigi.
+r"""Anlık Oyun Çeviri paketleme betiği.
 
-1) Tesseract calisma zamani gecici klasore kopyalanir (exe + DLL'ler).
-2) PyInstaller ile uygulama exe'si derlenir (tessdata + ikon gomulu).
-3) Tesseract runtime ve tessdata dist klasorune tasinir.
+1) Tesseract çalışma zamanı geçici klasöre kopyalanır (exe + DLL'ler).
+2) PyInstaller ile uygulama exe'si derlenir (tessdata + ikon gömülü).
+3) Tesseract runtime ve tessdata dist klasörüne taşınır.
 
-Kullanim:  python build\build_app.py
-Cikti:     dist\AnlikOyunCeviri\AnlikOyunCeviri.exe
+Kullanım:  python build\build_app.py
+Çıktı:     dist\AnlikOyunCeviri\AnlikOyunCeviri.exe
 """
 import os
 import shutil
@@ -22,7 +22,7 @@ TESS_RUNTIME = os.path.join(BUILD, "ocr_runtime", "Tesseract-OCR")
 
 def stage_tesseract():
     if os.path.exists(os.path.join(TESS_RUNTIME, "tesseract.exe")):
-        print("[OK] Tesseract runtime zaten hazir:", TESS_RUNTIME)
+        print("[OK] Tesseract runtime zaten hazır:", TESS_RUNTIME)
         return
     os.makedirs(TESS_RUNTIME, exist_ok=True)
     copied = 0
@@ -31,7 +31,7 @@ def stage_tesseract():
             shutil.copy2(os.path.join(TESS_SRC, name),
                          os.path.join(TESS_RUNTIME, name))
             copied += 1
-    print(f"[OK] Tesseract runtime kopyalandi: {copied} dosya")
+    print(f"[OK] Tesseract runtime kopyalandı: {copied} dosya")
 
 
 def run_pyinstaller():
@@ -42,10 +42,10 @@ def run_pyinstaller():
         "--workpath", os.path.join(BUILD, "pywork"),
         os.path.join(BUILD, "anlik.spec"),
     ]
-    print("[..] PyInstaller calistiriliyor...")
+    print("[..] PyInstaller çalıştırılıyor...")
     r = subprocess.run(cmd, cwd=ROOT)
     if r.returncode != 0:
-        print("[HATA] PyInstaller basarisiz.")
+        print("[HATA] PyInstaller başarısız.")
         sys.exit(1)
 
 
@@ -63,15 +63,15 @@ def copy_runtime():
 
 def main():
     if not os.path.exists(TESS_SRC):
-        print("[UYARI] Kaynak Tesseract bulunamadi:", TESS_SRC)
-        print("        Tesseract olmadan derlenecek; OCR calismaz.")
+        print("[UYARI] Kaynak Tesseract bulunamadı:", TESS_SRC)
+        print("        Tesseract olmadan derlenecek; OCR çalışmaz.")
     else:
         stage_tesseract()
     run_pyinstaller()
     copy_runtime()
     exe = os.path.join(DIST, "AnlikOyunCeviri.exe")
     if not os.path.exists(exe):
-        print("[HATA] Derlenen exe bulunamadi:", exe)
+        print("[HATA] Derlenen exe bulunamadı:", exe)
         sys.exit(1)
     total = sum(os.path.getsize(os.path.join(r, f))
                 for r, _, fs in os.walk(DIST) for f in fs)

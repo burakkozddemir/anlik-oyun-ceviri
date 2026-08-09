@@ -7,37 +7,37 @@ except ImportError:
     mss = None
 
 LANGUAGES = [
-    ("otomatik", "Otomatik Algila"),
-    ("en", "Ingilizce"),
-    ("tr", "Turkce"),
+    ("otomatik", "Otomatik Algıla"),
+    ("en", "İngilizce"),
+    ("tr", "Türkçe"),
     ("de", "Almanca"),
-    ("fr", "Fransizca"),
-    ("es", "Ispanyolca"),
-    ("it", "Italyanca"),
+    ("fr", "Fransızca"),
+    ("es", "İspanyolca"),
+    ("it", "İtalyanca"),
     ("pt", "Portekizce"),
-    ("ru", "Rusca"),
+    ("ru", "Rusça"),
     ("ja", "Japonca"),
     ("ko", "Korece"),
-    ("zh", "Cince (Basit)"),
+    ("zh", "Çince (Basit)"),
     ("zh-CN", "Cince"),
-    ("ar", "Arapca"),
-    ("pl", "Lehce"),
-    ("nl", "Flemenkce"),
-    ("sv", "Isvecce"),
+    ("ar", "Arapça"),
+    ("pl", "Lehçe"),
+    ("nl", "Flemenkçe"),
+    ("sv", "İsveççe"),
     ("da", "Danimarkaca"),
     ("fi", "Fince"),
     ("el", "Yunanca"),
-    ("cs", "Cekce"),
+    ("cs", "Çekçe"),
     ("hu", "Macarca"),
     ("ro", "Rumence"),
     ("bg", "Bulgarca"),
     ("uk", "Ukraynaca"),
-    ("hi", "Hintce"),
+    ("hi", "Hintçe"),
     ("vi", "Vietnamca"),
     ("th", "Tayca"),
     ("id", "Endonezce"),
     ("ms", "Malayca"),
-    ("fa", "Farsca"),
+    ("fa", "Farsça"),
 ]
 
 
@@ -51,7 +51,7 @@ def available_monitors():
 
 
 def monitor_bounds(monitor_index=0):
-    """Secili monitörun sinirlarini doner (sanal masaustu koordinatlari)."""
+    """Seçili monitörün sınırlarını döner (sanal masaüstü koordinatları)."""
     if mss is None:
         return {"left": 0, "top": 0, "width": 0, "height": 0}
     with mss.mss() as sct:
@@ -65,14 +65,14 @@ def monitor_bounds(monitor_index=0):
 
 
 def grab_region(region, monitor_index=0):
-    """Belirtilen bolgenin goruntusunu PIL Image olarak dondurur.
+    """Belirtilen bölgenin görüntüsünü PIL Image olarak döndürür.
 
-    Bolge, sanal masaustu (tum ekranlar) koordinat sistemindedir;
+    Bölge, sanal masaüstü (tüm ekranlar) koordinat sistemindedir;
     negatif koordinatlar da desteklenir. Tek seferlik yakalamalar
-    icindir; surekli yakalama icin CaptureSession kullanin.
+    içindir; sürekli yakalama için CaptureSession kullanın.
     """
     if mss is None:
-        raise RuntimeError("mss kutuphanesi yuklu degil. 'pip install mss' calistirin.")
+        raise RuntimeError("mss kütüphanesi yüklü değil. 'pip install mss' çalıştırın.")
     left = int(region["left"])
     top = int(region["top"])
     width = max(1, int(region["width"]))
@@ -85,8 +85,8 @@ def grab_region(region, monitor_index=0):
 
 
 class CaptureSession:
-    """Pipeline omru boyunca tek MSS oturumu; her karede yeni oturum
-    acmaya gerek kalmaz (GDI baglantisinin maliyeti dusurulur).
+    """Pipeline ömrü boyunca tek MSS oturumu; her karede yeni oturum
+    açmaya gerek kalmaz (GDI bağlantısının maliyeti düşürülür).
     """
 
     def __init__(self):
@@ -98,7 +98,7 @@ class CaptureSession:
 
     def grab(self, region):
         if self._sct is None:
-            raise RuntimeError("mss kutuphanesi yuklu degil. 'pip install mss' calistirin.")
+            raise RuntimeError("mss kütüphanesi yüklü değil. 'pip install mss' çalıştırın.")
         if self._closed:
             raise RuntimeError("Yakalama oturumu kapatilmis.")
         left = int(region["left"])
@@ -120,7 +120,7 @@ class CaptureSession:
 
 
 def virtual_desktop():
-    """Tum ekranlari kaplayan sanal masaustu sinirlari ve boyutu."""
+    """Tüm ekranları kaplayan sanal masaüstü sınırları ve boyutu."""
     if mss is None:
         return {"left": 0, "top": 0, "width": 0, "height": 0}
     with mss.mss() as sct:

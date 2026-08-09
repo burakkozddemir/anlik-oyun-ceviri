@@ -1,10 +1,12 @@
-"""Ceviri motorlari (Google, MyMemory, DeepL, OpenAI uyumlu) ve onbellek."""
+"""Çeviri motorları (Google, MyMemory, DeepL, OpenAI uyumlu) ve önbellek."""
 import hashlib
 import json
 import os
 import re
 import threading
 import time
+
+from . import i18n
 
 try:
     from deep_translator import GoogleTranslator, MyMemoryTranslator
@@ -21,10 +23,10 @@ except ImportError:
     OpenAI = None
 
 ENGINES = [
-    ("google", "Google Ceviri (ucretsiz, anahtar gerekmez)"),
-    ("mymemory", "MyMemory (ucretsiz yedek)"),
+    ("google", "Google Çeviri (ücretsiz, anahtar gerekmez)"),
+    ("mymemory", "MyMemory (ücretsiz yedek)"),
     ("deepl", "DeepL API (anahtar gerekir)"),
-    ("openai", "ChatGPT / Gemini / DeepSeek (API anahtari gerekir)"),
+    ("openai", "ChatGPT / Gemini / DeepSeek (API anahtarı gerekir)"),
 ]
 
 MY_MEMORY_LANG = {
@@ -49,8 +51,8 @@ _LAST_BLOCK = {}
 # Prompt/model/gerec degisince eski cache girdilerini gecersiz kilar.
 CACHE_VERSION = 2
 
-# Toplu ceviride satirlari eslestirmek icin kullanilan isaretleyiciler.
-# (.*) yeni satira kadar okur; boylece her [[i]] bir satiri yakalar.
+# Toplu çeviride satırları eşleştirmek için kullanılan işaretleyiciler.
+# (.*) yeni satıra kadar okur; böylece her [[i]] bir satırı yakalar.
 MARKER_RE = re.compile(r"\[\[(\d+)\]\]\s*(.*)")
 
 
@@ -113,12 +115,12 @@ class Translator:
             self.stats["total_latency_ms"] += latency
 
     def translate_lines(self, lines, source, target, engine=None):
-        """Birden fazla satiri tek istekte cevirir (onbellekli).
+        """Birden fazla satırı tek istekte çevirir (önbellekli).
 
-        Cache isabetli ve isabetsiz satirlarin satir sirasi korunur.
-        Toplu ceviride satirlar [[0]], [[1]]... isaretleyicileriyle
-        gonderilir; motor isaretleyicileri bozarsa satir satir yedek
-        cevirim yapilir.
+        Cache isabetli ve isabetsiz satırların satır sırası korunur.
+        Toplu çeviride satırlar [[0]], [[1]]... işaretleyicileriyle
+        gönderilir; motor işaretleyicileri bozarsa satır satır yedek
+        çevirim yapılır.
         """
         engine = engine or self.config.get("engine", "google")
         extra = self._cache_extra(engine)
@@ -169,7 +171,7 @@ class Translator:
         return [r for r in results if r is not None]
 
     def translate_lines_measured(self, lines, source, target, engine=None):
-        """Satir listesini cevirir ve toplam gecikmeyi ms cinsinden doner."""
+        """Satır listesini çevirir ve toplam gecikmeyi ms cinsinden döndürür."""
         t0 = time.time()
         out = self.translate_lines(lines, source, target, engine)
         return out, int((time.time() - t0) * 1000)
@@ -182,10 +184,10 @@ class Translator:
 
     @staticmethod
     def _extract_marked(block, count):
-        """[[i]] isaretleyicili ceviriyi satirlara ayirir.
+        """[[i]] işaretleyicili çeviriyi satırlara ayırır.
 
-        Tum isaretleyiciler dogru sirada bulunamazsa None doner ve
-        cagiran taraf satir satir yedek cevirime gecer.
+        Tüm işaretleyiciler doğru sırada bulunamazsa None döner ve
+        çağıran taraf satır satır yedek çevirime geçer.
         """
         found = {}
         for m in MARKER_RE.finditer(block):
@@ -240,14 +242,14 @@ class Translator:
 
     def _translate_google(self, text, source, target):
         if GoogleTranslator is None:
-            raise RuntimeError("deep-translator yuklu degil")
+            raise RuntimeError(i18n.t("deep-translator yüklü değil", self.config.get("language", "tr")))
         src = self._google_src(source)
         tr = GoogleTranslator(source=src or "auto", target=target)
         return tr.translate(text)
 
     def _translate_mymemory(self, text, source, target):
         if MyMemoryTranslator is None:
-            raise RuntimeError("deep-translator yuklu degil")
+            raise RuntimeError(i18n.t("deep-translator yüklü değil", self.config.get("language", "tr")))
         src = MY_MEMORY_LANG.get(source, source)
         tgt = MY_MEMORY_LANG.get(target, target)
         tr = MyMemoryTranslator(source=src, target=tgt)
@@ -255,10 +257,10 @@ class Translator:
 
     def _translate_deepl(self, text, source, target):
         if DeepLTranslator is None:
-            raise RuntimeError("deep-translator yuklu degil")
+            raise RuntimeError(i18n.t("deep-translator yüklü değil", self.config.get("language", "tr")))
         api_key = self._keys().get("deepl", "")
         if not api_key:
-            raise RuntimeError("DeepL API anahtari bos. Ayarlardan ekleyin.")
+            raise RuntimeError(i18n.t("DeepL API anahtarı boş. Ayarlardan ekleyin.", self.config.get("language", "tr")))
         src = self._google_src(source)
         tr = DeepLTranslator(api_key=api_key,
                              source=src or "auto",
@@ -267,20 +269,21 @@ class Translator:
 
     def _translate_openai(self, text, source, target):
         if OpenAI is None:
-            raise RuntimeError("openai kutuphanesi yuklu degil")
+            raise RuntimeError(i18n.t("openai kütüphanesi yüklü değil", self.config.get("language", "tr")))
         keys = self._keys()
         api_key = keys.get("openai", "")
         if not api_key:
-            raise RuntimeError("OpenAI/ChatGPT API anahtari bos. Ayarlardan ekleyin.")
+            raise RuntimeError(i18n.t("OpenAI/ChatGPT API anahtarı boş. Ayarlardan ekleyin.", self.config.get("language", "tr")))
         base_url = keys.get("openai_base_url", "") or None
         model = keys.get("openai_model", "gpt-4o-mini")
         client = OpenAI(api_key=api_key, base_url=base_url)
-        src_name = source if source not in ("otomatik", "auto", "") else "otomatik algilanan"
+        lang = self.config.get("language", "tr")
+        src_name = source if source not in ("otomatik", "auto", "") else i18n.t("otomatik algılanan", lang)
         prompt = (
-            f"Kaynak dil: {src_name}\n"
-            f"Hedef dil kodu: {target}\n\n"
-            f"Sadece ceviriyi yaz, baska bir sey yazma.\n"
-            f"Metin:\n{text}"
+            i18n.t("Kaynak dil: {src}", lang, src=src_name) + "\n"
+            + i18n.t("Hedef dil kodu: {target}", lang, target=target) + "\n\n"
+            + i18n.t("Sadece çeviriyi yaz, başka bir şey yazma.", lang) + "\n"
+            + i18n.t("Metin:", lang) + "\n" + text
         )
         resp = client.chat.completions.create(
             model=model,

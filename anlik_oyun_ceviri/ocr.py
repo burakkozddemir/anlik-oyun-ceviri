@@ -1,4 +1,4 @@
-"""OCR motoru: oncelik Tesseract, yedek Windows yerlesik OCR."""
+"""OCR motoru: öncelik Tesseract, yedek Windows yerleşik OCR."""
 import os
 import shutil
 import sys
@@ -7,6 +7,7 @@ import threading
 from PIL import Image, ImageOps
 
 from . import config as config_mod
+from . import i18n
 
 def _bundle_root():
     if getattr(sys, "frozen", False):
@@ -103,20 +104,19 @@ class OcrEngine:
         return self._mode is not None
 
     @staticmethod
-    def engine_help():
+    def engine_help(lang="tr"):
         msg = []
         if pytesseract is None:
-            msg.append("- 'pip install pytesseract'")
+            msg.append(i18n.t("- 'pip install pytesseract'", lang))
         exe = shutil.which("tesseract")
         if exe:
-            msg.append(f"- Tesseract bulundu: {exe}")
+            msg.append(i18n.t("- Tesseract bulundu: {exe}", lang, exe=exe))
         else:
-            msg.append("- Tesseract kurulu degil: https://github.com/UB-Mannheim/tesseract/wiki")
-            msg.append("  veya 'winget install UB-Mannheim.TesseractOCR'")
+            msg.append(i18n.t("- Tesseract kurulu değil: https://github.com/UB-Mannheim/tesseract/wiki\n  veya 'winget install UB-Mannheim.TesseractOCR'", lang))
         if _WIN_OCR is not None:
-            msg.append("- Windows yerlesik OCR kullanilabilir.")
+            msg.append(i18n.t("- Windows yerleşik OCR kullanılabilir.", lang))
         else:
-            msg.append("- 'pip install winocr' ile Windows yerlesik OCR eklenebilir.")
+            msg.append(i18n.t("- 'pip install winocr' ile Windows yerleşik OCR eklenebilir.", lang))
         return "\n".join(msg)
 
     def _preprocess(self, img):
@@ -167,9 +167,9 @@ class OcrEngine:
                 timeout=timeout,
             )
         except pytesseract.TesseractError as exc:
-            raise RuntimeError(
-                f"Tesseract dili hatasi ({exc}). 'ocr_langs' ayarini kontrol edin. "
-                f"Japonca icin jpn.traineddata, Korece icin kor.traineddata gerekir.") from exc
+            raise RuntimeError(i18n.t(
+                "Tesseract dili hatası ({exc}). 'ocr_langs' ayarını kontrol edin. Japonca için jpn.traineddata, Korece için kor.traineddata gerekir.",
+                self.config.get("language", "tr"), exc=exc)) from exc
         lines = {}
         for i in range(len(data["text"])):
             txt = data["text"][i].strip()
@@ -192,7 +192,9 @@ class OcrEngine:
 
     def read(self, img):
         if not self.is_ready:
-            raise RuntimeError("OCR motoru hazir degil.\n" + self.engine_help())
+            raise RuntimeError(i18n.t("OCR motoru hazır değil.\n{help}",
+                                      self.config.get("language", "tr"),
+                                      help=self.engine_help(self.config.get("language", "tr"))))
         with self._lock:
             if self._mode == "windows":
                 return self._read_windows(img)

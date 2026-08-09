@@ -1,9 +1,9 @@
-"""Ekran uzerinde ceviri bolgesi secme (surukle-birak).
+"""Ekran üzerinde çeviri bölgesi seçme (sürükle-bırak).
 
-Pencere, overrideredirect + geometry ile secili monitöru (varsayilan:
-tum sanal masaustu) kaplar. Canvas koordinatlari pencere yerlesimine
-gore goreli tutulur; donen bolge sanal masaustu (global) koordinat
-sistemindedir, negatif koordinatli monitörler de dogru calisir.
+Pencere, overrideredirect + geometry ile seçili monitörü (varsayılan:
+tüm sanal masaüstü) kaplar. Canvas koordinatları pencere yerleşimine
+göre göreli tutulur; dönen bölge sanal masaüstü (global) koordinat
+sistemindedir, negatif koordinatlı monitörler de doğru çalışır.
 """
 import tkinter as tk
 
@@ -11,9 +11,9 @@ from .screen import monitor_bounds, virtual_desktop
 
 
 def select_region(root, monitor_index=0):
-    """Kullaniciya ekran uzerinde dikdortgen secim yaptirir.
+    """Kullanıcıya ekran üzerinde dikdörtgen seçim yaptırır.
 
-    Esc veya sag tik ile iptal edilebilir; iptalde None doner.
+    Esc veya sağ tık ile iptal edilebilir; iptalde None döner.
     """
     if monitor_index:
         vd = monitor_bounds(monitor_index)

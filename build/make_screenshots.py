@@ -1,6 +1,6 @@
-"""Uygulama ekran goruntulerini uretir (README icin).
+"""Uygulama ekran görüntülerini üretir (README için).
 
-Cikti: assets/screenshots/ana-pencere.png, hakkinda.png, api-prompt.png
+Çıktı: assets/screenshots/ana-pencere.png, hakkinda.png, api-prompt.png
 """
 import ctypes
 import ctypes.wintypes
@@ -55,7 +55,7 @@ def capture(hwnd, path):
     user32.GetClientRect(hwnd, ctypes.byref(rect))
     w, h = rect.right, rect.bottom
     if w <= 0 or h <= 0:
-        print("  [UYARI] Gecersiz pencere boyutu:", w, h)
+        print("  [UYARI] Geçersiz pencere boyutu:", w, h)
         return
     hdc_win = user32.GetWindowDC(hwnd)
     hdc_mem = gdi32.CreateCompatibleDC(hdc_win)
@@ -112,7 +112,7 @@ def main():
     prompt_hwnd = None
     prompt_win = None
     for w in root.winfo_children():
-        if isinstance(w, tk.Toplevel) and w.title() == "API Anahtari Ekle":
+        if isinstance(w, tk.Toplevel) and w.title() == "API Anahtarı Ekle":
             prompt_win = w
             prompt_hwnd = w.winfo_id()
             break
@@ -127,10 +127,10 @@ def main():
     root.update()
     about_hwnd = None
     for w in root.winfo_children():
-        if isinstance(w, tk.Toplevel) and w.title() == "Hakkinda":
+        if isinstance(w, tk.Toplevel) and w.title() == "Hakkında":
             about_hwnd = w.winfo_id()
             break
-    print("Hakkinda hwnd:", about_hwnd)
+    print("Hakkında hwnd:", about_hwnd)
     if about_hwnd:
         capture(about_hwnd, os.path.join(OUT, "hakkinda.png"))
 

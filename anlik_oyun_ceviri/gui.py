@@ -1,4 +1,4 @@
-﻿"""Ana kontrol penceresi: modern, koyu temali, sekme tabanli arayuz."""
+﻿"""Ana kontrol penceresi: modern, koyu temalı, sekmeli arayüz (TR/EN)."""
 import ctypes
 import os
 import queue
@@ -11,6 +11,7 @@ from tkinter import colorchooser, messagebox, ttk
 
 from . import __app_name__, __beta__, __company__, __copyright__, __designer__, __version__
 from . import config as config_mod
+from . import i18n
 from . import theme
 from .overlay import SubtitleOverlay
 from .pipeline import TranslationPipeline
@@ -26,17 +27,17 @@ DESIGNER = __designer__
 COPYRIGHT = __copyright__
 
 ENGINE_DESC = {
-    "google": "Ucretsiz ve hizli. API anahtari gerekmez; kucuk metinler icin idealdir.",
-    "mymemory": "Ucretsiz yedek motor. Google kapaliyken otomatik devreye girer.",
-    "deepl": "Dogal ve akici ceviri kalitesi. DeepL API anahtari gerekir.",
-    "openai": "ChatGPT / Gemini / DeepSeek uyumlu. Kaliteli baglam cevirisi; API anahtari gerekir.",
+    "google": "Ücretsiz ve hızlı. API anahtarı gerekmez; küçük metinler için idealdir.",
+    "mymemory": "Ücretsiz yedek motor. Google kapalıyken otomatik devreye girer.",
+    "deepl": "Doğal ve akıcı çeviri kalitesi. DeepL API anahtarı gerekir.",
+    "openai": "ChatGPT / Gemini / DeepSeek uyumlu. Kaliteli bağlam çevirisi; API anahtarı gerekir.",
 }
 
 PRESET_COLORS = ["#FFFFFF", "#FFFF00", "#00FF00", "#FFD700", "#FF6B6B", "#5ECDE0", "#FF9F43"]
 
 HOTKEYS = {"toggle": "F9", "manual": "F10", "overlay": "F11"}
 
-GAME_FILTER = ("anlik", "oyun ceviri", "python", "tesseract", "masaustu")
+GAME_FILTER = ("anlık", "oyun çeviri", "python", "tesseract", "masaüstü")
 
 
 class MainGUI:
@@ -45,6 +46,9 @@ class MainGUI:
         self.base_cfg = config_mod.load_config()
         self.cfg = dict(self.base_cfg)
         self.cfg["region"] = dict(self.base_cfg["region"])
+        self._lang = self.cfg.get("language", "tr")
+        if self._lang not in i18n.LANG_CODES:
+            self._lang = "tr"
         self.pipeline = None
         self._log_buffer = []
         self._overlay_visible = True
@@ -69,9 +73,9 @@ class MainGUI:
         self._apply_overlay_style(init=True)
         self.overlay.update_position(self.cfg["region"])
         if not self.overlay.click_through_ok:
-            self._log("Uyari: overlay tiklamalari oyuna geciremiyor (eski Windows surumu?).", "warn")
+            self._log(self._t("Uyarı: overlay tıklamaları oyuna geçiremiyor (eski Windows sürümü?)."), "warn")
         if not self.overlay.capture_excluded:
-            self._log("Uyari: overlay ekran yakalamasindan haric tutulamadi; goruntude yansima olabilir.", "warn")
+            self._log(self._t("Uyarı: overlay ekran yakalamasından hariç tutulamadı; görüntüde yansıma olabilir."), "warn")
 
         self._build_header()
         self._build_tabs()
@@ -82,8 +86,11 @@ class MainGUI:
         self._auto_detect_initial()
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
-        self._log("Program hazir. F9 = baslat/durdur, F10 = ekran ceviri, F11 = altyazi goster/gizle", "info")
+        self._log(self._t("Program hazır. F9 = başlat/durdur, F10 = ekran çevirisi, F11 = altyazı göster/gizle"), "info")
         self.root.after(400, self._maybe_prompt_api_key)
+
+    def _t(self, key, **kw):
+        return i18n.t(key, self._lang, **kw)
 
     def _set_window_icon(self, root):
         try:
@@ -119,7 +126,7 @@ class MainGUI:
         title = tk.Label(row, text=APP_TITLE, bg=theme.BG, fg=theme.TEXT,
                          font=(theme.FONT_BOLD, 17))
         title.pack(side="left")
-        dot = tk.Label(row, text="â—", bg=theme.BG, fg=theme.ACCENT,
+        dot = tk.Label(row, text="●", bg=theme.BG, fg=theme.ACCENT,
                        font=(theme.FONT_BOLD, 9))
         dot.pack(side="left", padx=(6, 5), pady=(5, 0))
         by = tk.Label(row, text=f"by {COMPANY}", bg=theme.BG, fg=theme.MUTED,
@@ -129,16 +136,16 @@ class MainGUI:
             badge = tk.Label(row, text="BETA", bg=theme.ACCENT, fg="#ffffff",
                              font=(theme.FONT_BOLD, 8), padx=6, pady=1)
             badge.pack(side="left", padx=(8, 0), pady=(4, 0))
-        sub = tk.Label(brand, text="Gercek zamanli AI oyun cevirmeni",
+        sub = tk.Label(brand, text=self._t("Gerçek zamanlı AI oyun çevirmeni"),
                        bg=theme.BG, fg=theme.MUTED, font=(theme.FONT, 9))
         sub.pack(anchor="w")
 
         right = tk.Frame(header, bg=theme.BG)
         right.pack(side="right")
-        self.header_state = tk.Label(right, text="DURDURULDU", bg=theme.BG,
+        self.header_state = tk.Label(right, text=self._t("DURDURULDU"), bg=theme.BG,
                                      fg=theme.MUTED, font=(theme.FONT_BOLD, 9))
         self.header_state.pack(side="top", anchor="e")
-        theme.ModernButton(right, text="Hakkinda", command=self._show_about,
+        theme.ModernButton(right, text=self._t("Hakkında"), command=self._show_about,
                            kind="ghost", font=(theme.FONT, 9), padx=10, pady=3).pack(side="bottom", anchor="e")
 
     def _build_tabs(self):
@@ -149,25 +156,25 @@ class MainGUI:
         self.tab_ocr = ttk.Frame(self.nb, style="TFrame")
         self.tab_api = ttk.Frame(self.nb, style="TFrame")
         self.tab_log = ttk.Frame(self.nb, style="TFrame")
-        self.nb.add(self.tab_translate, text="  Ceviri  ")
-        self.nb.add(self.tab_look, text="  Gorunum  ")
-        self.nb.add(self.tab_ocr, text="  OCR / Performans  ")
-        self.nb.add(self.tab_api, text="  API Ayarlari  ")
-        self.nb.add(self.tab_log, text="  Gunluk  ")
+        self.nb.add(self.tab_translate, text=self._t("  Çeviri  "))
+        self.nb.add(self.tab_look, text=self._t("  Görünüm  "))
+        self.nb.add(self.tab_ocr, text=self._t("  OCR / Performans  "))
+        self.nb.add(self.tab_api, text=self._t("  API Ayarları  "))
+        self.nb.add(self.tab_log, text=self._t("  Günlük  "))
         self._build_tab_translate()
         self._build_tab_look()
         self._build_tab_ocr()
         self._build_tab_api()
         self._build_tab_log()
 
-    # ---------- Ceviri ----------
+    # ---------- Çeviri ----------
     def _build_tab_translate(self):
         tab = self.tab_translate
 
-        # Oyun karti
+        # Oyun kartı
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        theme.section(c, "OYUN").pack(fill="x")
+        theme.section(c, self._t("OYUN")).pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
         self.game_var = tk.StringVar(value=self.cfg.get("last_game_name", ""))
@@ -175,7 +182,7 @@ class MainGUI:
         entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
         entry.bind("<Return>", lambda e: self._on_game_changed())
         entry.bind("<FocusOut>", lambda e: self._on_game_changed())
-        theme.ModernButton(row, text="Oyunu Otomatik Al", command=self._auto_detect_game,
+        theme.ModernButton(row, text=self._t("Oyunu Otomatik Al"), command=self._auto_detect_game,
                            kind="secondary").pack(side="right")
 
         self.region_var = tk.StringVar()
@@ -183,11 +190,11 @@ class MainGUI:
                   font=(theme.FONT, 9)).pack(anchor="w", padx=12)
         row2 = tk.Frame(c, bg=theme.CARD)
         row2.pack(fill="x", padx=12, pady=(4, 10))
-        theme.ModernButton(row2, text="Bolge Sec", command=self._select_region,
+        theme.ModernButton(row2, text=self._t("Bölge Seç"), command=self._select_region,
                            kind="accent").pack(side="left")
-        theme.ModernButton(row2, text="Onizle", command=self._preview_region,
+        theme.ModernButton(row2, text=self._t("Önizle"), command=self._preview_region,
                            kind="secondary").pack(side="left", padx=6)
-        theme.ModernButton(row2, text="Manuel Ekran Cevirisi (F10)",
+        theme.ModernButton(row2, text=self._t("Manuel Ekran Çevirisi (F10)"),
                            command=self._manual_translate,
                            kind="secondary").pack(side="right")
         self._refresh_region_text()
@@ -195,22 +202,22 @@ class MainGUI:
         # Diller
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        theme.section(c, "DILLER").pack(fill="x")
+        theme.section(c, self._t("DİLLER")).pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 10))
         col1 = tk.Frame(row, bg=theme.CARD)
         col1.pack(side="left", expand=True, fill="x")
-        ttk.Label(col1, text="Kaynak (oyun) dili", style="CardMuted.TLabel").pack(anchor="w")
+        ttk.Label(col1, text=self._t("Kaynak (oyun) dili"), style="CardMuted.TLabel").pack(anchor="w")
         self.source_var = tk.StringVar(value=self.cfg.get("source_lang", "otomatik"))
         src = ttk.Combobox(col1, textvariable=self.source_var, width=18, state="readonly",
                            values=[code for code, _ in LANGUAGES])
         src.pack(fill="x", pady=(4, 0))
-        theme.ModernButton(row, text="â‡„", command=self._swap_langs,
+        theme.ModernButton(row, text="⇄", command=self._swap_langs,
                            kind="ghost", width=2, font=(theme.FONT_BOLD, 13)).pack(
             side="left", padx=10)
         col2 = tk.Frame(row, bg=theme.CARD)
         col2.pack(side="left", expand=True, fill="x")
-        ttk.Label(col2, text="Hedef dil (ceviri)", style="CardMuted.TLabel").pack(anchor="w")
+        ttk.Label(col2, text=self._t("Hedef dil (çeviri)"), style="CardMuted.TLabel").pack(anchor="w")
         self.target_var = tk.StringVar(value=self.cfg.get("target_lang", "tr"))
         tgt = ttk.Combobox(col2, textvariable=self.target_var, width=18, state="readonly",
                            values=[code for code, _ in LANGUAGES])
@@ -219,12 +226,12 @@ class MainGUI:
         # Motor
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        theme.section(c, "CEVIRI MOTORU").pack(fill="x")
+        theme.section(c, self._t("ÇEVİRİ MOTORU")).pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
         self.engine_var = tk.StringVar(value=self.cfg.get("engine", "google"))
         eng = ttk.Combobox(row, textvariable=self.engine_var, width=44, state="readonly",
-                           values=[code for code, _ in ENGINES])
+                           values=[self._t(name) for _, name in ENGINES])
         eng.pack(side="left")
         eng.bind("<<ComboboxSelected>>", lambda e: self._refresh_engine_desc())
         self.engine_desc = tk.Label(c, text="", bg=theme.CARD, fg=theme.MUTED,
@@ -232,20 +239,20 @@ class MainGUI:
         self.engine_desc.pack(anchor="w", padx=12, pady=(0, 10))
         self._refresh_engine_desc()
 
-        # Baslat / durdur
+        # Başlat / durdur
         wrap = tk.Frame(tab, bg=theme.BG)
         wrap.pack(fill="x", padx=14, pady=8)
-        self.toggle_btn = theme.ModernButton(wrap, text="Ceviriyi Baslat  (F9)",
+        self.toggle_btn = theme.ModernButton(wrap, text=self._t("Çeviriyi Başlat  (F9)"),
                                              command=self._toggle, kind="accent")
         self.toggle_btn.pack(fill="x", ipady=4)
-        self.status_var = tk.StringVar(value="Hazir.")
+        self.status_var = tk.StringVar(value=self._t("Hazır."))
         ttk.Label(wrap, textvariable=self.status_var, style="Muted.TLabel",
                   wraplength=620, justify="left").pack(anchor="w", pady=(6, 0))
 
-        # Son ceviri
+        # Son çeviri
         c = theme.card(tab)
         c.pack(fill="both", expand=True, padx=14, pady=(8, 14))
-        theme.section(c, "SON CEVIRI").pack(fill="x")
+        theme.section(c, self._t("SON ÇEVİRİ")).pack(fill="x")
         self.output_text = tk.Text(c, height=5, wrap="word", bg=theme.CARD_2,
                                    fg=theme.TEXT, insertbackground=theme.TEXT,
                                    font=(theme.FONT, 11), relief="flat",
@@ -254,15 +261,15 @@ class MainGUI:
         self.output_text.pack(fill="both", expand=True, padx=12, pady=(4, 12))
         self.output_text.configure(state="disabled")
 
-    # ---------- Gorunum ----------
+    # ---------- Görünüm ----------
     def _build_tab_look(self):
         tab = self.tab_look
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        theme.section(c, "YAZI").pack(fill="x")
+        theme.section(c, self._t("YAZI")).pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
-        ttk.Label(row, text="YazÄ± tipi:").pack(side="left")
+        ttk.Label(row, text=self._t("Yazı tipi:")).pack(side="left")
         self.font_family_var = tk.StringVar(value=self.cfg.get("font_family", "Segoe UI"))
         families = sorted(set(tkfont.families(self.root)))
         fam = ttk.Combobox(row, textvariable=self.font_family_var, width=26,
@@ -272,14 +279,14 @@ class MainGUI:
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(2, 8))
-        ttk.Label(row, text="Boyut:").pack(side="left")
+        ttk.Label(row, text=self._t("Boyut:")).pack(side="left")
         self.font_size_var = tk.IntVar(value=int(self.cfg.get("font_size", 20)))
         ttk.Scale(row, from_=10, to=48, variable=self.font_size_var,
                   orient="horizontal", command=self._on_size_change).pack(
             side="left", fill="x", expand=True, padx=8)
         ttk.Label(row, textvariable=self.font_size_var, width=3).pack(side="left")
 
-        ttk.Label(c, text="Renk:", style="CardMuted.TLabel").pack(anchor="w", padx=12)
+        ttk.Label(c, text=self._t("Renk:"), style="CardMuted.TLabel").pack(anchor="w", padx=12)
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(4, 10))
         self.color_var = tk.StringVar(value=self.cfg.get("text_color", "#FFFFFF"))
@@ -287,25 +294,25 @@ class MainGUI:
             b = tk.Button(row, bg=col, width=2, relief="flat", cursor="hand2",
                           command=lambda cc=col: self._set_color(cc))
             b.pack(side="left", padx=3)
-        theme.ModernButton(row, text="Ozel renk...", command=self._pick_color,
+        theme.ModernButton(row, text=self._t("Özel renk..."), command=self._pick_color,
                            kind="secondary").pack(side="left", padx=8)
 
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        theme.section(c, "ALTYAZI KATMANI").pack(fill="x")
+        theme.section(c, self._t("ALTYAZI KATMANI")).pack(fill="x")
         self.mode_var = tk.StringVar(value=self.cfg.get("overlay_mode", "transparent"))
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12)
-        ttk.Radiobutton(row, text="Saydam (yalnizca metin)",
+        ttk.Radiobutton(row, text=self._t("Saydam (yalnızca metin)"),
                         variable=self.mode_var, value="transparent",
                         command=self._on_style_change).pack(anchor="w", pady=3)
-        ttk.Radiobutton(row, text="Koyu kutu (metin arkasinda yari saydam zemin)",
+        ttk.Radiobutton(row, text=self._t("Koyu kutu (metin arkasında yarı saydam zemin)"),
                         variable=self.mode_var, value="box",
                         command=self._on_style_change).pack(anchor="w", pady=3)
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(6, 2))
-        ttk.Label(row, text="Saydamlik:").pack(side="left")
+        ttk.Label(row, text=self._t("Saydamlık:")).pack(side="left")
         self.opacity_var = tk.DoubleVar(value=1.0)
         ttk.Scale(row, from_=0.2, to=1.0, variable=self.opacity_var,
                   orient="horizontal", command=lambda v: self.opacity_var.set(float(v))).pack(
@@ -313,12 +320,12 @@ class MainGUI:
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(2, 10))
-        ttk.Label(row, text="Satir sayisi:").pack(side="left")
+        ttk.Label(row, text=self._t("Satır sayısı:")).pack(side="left")
         self.max_lines_var = tk.IntVar(value=int(self.cfg.get("max_lines", 3)))
         ttk.Spinbox(row, from_=1, to=8, textvariable=self.max_lines_var,
                     width=5, command=self._on_style_change).pack(side="left", padx=8)
 
-        theme.ModernButton(c, text="Onizlemeyi Overlay'de Goster",
+        theme.ModernButton(c, text=self._t("Önizlemeyi Overlay'de Göster"),
                            command=self._preview_overlay, kind="accent").pack(
             anchor="w", padx=12, pady=(2, 12))
 
@@ -327,11 +334,11 @@ class MainGUI:
         tab = self.tab_ocr
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        theme.section(c, "OCR AYARLARI").pack(fill="x")
+        theme.section(c, self._t("OCR AYARLARI")).pack(fill="x")
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=3)
-        ttk.Label(row, text="Tarama araligi (ms):").pack(side="left")
+        ttk.Label(row, text=self._t("Tarama aralığı (ms):")).pack(side="left")
         self.interval_var = tk.IntVar(value=int(self.cfg.get("ocr_interval_ms", 400)))
         ttk.Scale(row, from_=100, to=2000, variable=self.interval_var,
                   orient="horizontal", command=lambda v: self.interval_var.set(int(float(v)))).pack(
@@ -340,7 +347,7 @@ class MainGUI:
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=3)
-        ttk.Label(row, text="Buyutme (scale):").pack(side="left")
+        ttk.Label(row, text=self._t("Büyütme (scale):")).pack(side="left")
         self.scale_var = tk.DoubleVar(value=float(self.cfg.get("ocr_scale", 1.0)))
         ttk.Scale(row, from_=0.5, to=2.5, variable=self.scale_var,
                   orient="horizontal", command=lambda v: self.scale_var.set(round(float(v), 1))).pack(
@@ -349,7 +356,7 @@ class MainGUI:
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=3)
-        ttk.Label(row, text="Min. guven esigi:").pack(side="left")
+        ttk.Label(row, text=self._t("Min. güven eşiği:")).pack(side="left")
         self.conf_var = tk.IntVar(value=int(self.cfg.get("min_confidence", 40)))
         ttk.Scale(row, from_=0, to=90, variable=self.conf_var,
                   orient="horizontal", command=lambda v: self.conf_var.set(int(float(v)))).pack(
@@ -358,24 +365,24 @@ class MainGUI:
 
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(3, 8))
-        ttk.Label(row, text="OCR dilleri:").pack(side="left")
+        ttk.Label(row, text=self._t("OCR dilleri:")).pack(side="left")
         self.ocr_langs_var = tk.StringVar(value=self.cfg.get("ocr_langs", "eng+tur"))
         ttk.Entry(row, textvariable=self.ocr_langs_var, width=22).pack(side="left", padx=8)
-        ttk.Label(row, text="(orn. eng+tur+jpn)", style="CardMuted.TLabel",
+        ttk.Label(row, text=self._t("(örn. eng+tur+jpn)"), style="CardMuted.TLabel",
                   font=(theme.FONT, 9)).pack(side="left")
 
         self.stats_card = theme.card(tab)
         self.stats_card.pack(fill="x", padx=14, pady=8)
-        theme.section(self.stats_card, "CANLI ISTATISTIK").pack(fill="x")
+        theme.section(self.stats_card, self._t("CANLI İSTATİSTİK")).pack(fill="x")
         grid = tk.Frame(self.stats_card, bg=theme.CARD)
         grid.pack(fill="x", padx=12, pady=(0, 10))
         self.stat_widgets = {}
-        stats = [("fps", "FPS"), ("latency", "Gecikme"), ("translated", "Ceviri"),
-                 ("hits", "Onbellek isabeti"), ("errors", "Hata"), ("cache_size", "Onbellek boyutu")]
+        stats = [("fps", "FPS"), ("latency", "Gecikme"), ("translated", "Çeviri"),
+                 ("hits", "Önbellek isabeti"), ("errors", "Hata"), ("cache_size", "Önbellek boyutu")]
         for i, (key, label) in enumerate(stats):
             cell, body = theme.stat_cell(grid)
             cell.grid(row=i // 3, column=i % 3, sticky="nsew", padx=4, pady=4)
-            tk.Label(body, text=label, bg=theme.CARD_2, fg=theme.MUTED,
+            tk.Label(body, text=self._t(label), bg=theme.CARD_2, fg=theme.MUTED,
                      font=(theme.FONT, 9)).pack(anchor="w")
             val = tk.Label(body, text="-", bg=theme.CARD_2, fg=theme.TEXT,
                            font=(theme.FONT_BOLD, 15))
@@ -385,66 +392,79 @@ class MainGUI:
         grid.columnconfigure(1, weight=1)
         grid.columnconfigure(2, weight=1)
 
-        ttk.Label(tab, text="Not: NVIDIA GPU varsa GPU ile OCR icin winocr yerine tesseract onerilir.",
+        ttk.Label(tab, text=self._t("Not: NVIDIA GPU varsa GPU ile OCR için winocr yerine tesseract önerilir."),
                   style="Muted.TLabel", font=(theme.FONT, 9)).pack(anchor="w", padx=18, pady=(0, 14))
 
     # ---------- API ----------
     def _build_tab_api(self):
         tab = self.tab_api
+
+        # Dil / Language
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=(14, 8))
-        theme.section(c, "DEEPL API").pack(fill="x")
+        theme.section(c, self._t("DİL / LANGUAGE")).pack(fill="x")
+        row = tk.Frame(c, bg=theme.CARD)
+        row.pack(fill="x", padx=12, pady=(0, 10))
+        self.lang_var = tk.StringVar(value=dict(i18n.LANGUAGES).get(self._lang, "Türkçe"))
+        lang = ttk.Combobox(row, textvariable=self.lang_var, width=18, state="readonly",
+                            values=[name for _, name in i18n.LANGUAGES])
+        lang.pack(side="left")
+        lang.bind("<<ComboboxSelected>>", lambda e: self._on_lang_change())
+
+        c = theme.card(tab)
+        c.pack(fill="x", padx=14, pady=8)
+        theme.section(c, self._t("DEEPL API")).pack(fill="x")
         row = tk.Frame(c, bg=theme.CARD)
         row.pack(fill="x", padx=12, pady=(0, 4))
         self.deepl_var = tk.StringVar(value=self.cfg["api_keys"].get("deepl", ""))
         ttk.Entry(row, textvariable=self.deepl_var, show="*", width=40).pack(side="left", fill="x", expand=True, padx=(0, 6))
-        theme.ModernButton(row, text="Test", command=self._test_engine,
+        theme.ModernButton(row, text=self._t("Test"), command=self._test_engine,
                            kind="secondary").pack(side="right")
-        ttk.Label(c, text="Anahtar: deepl.com/pro-api", style="CardMuted.TLabel",
+        ttk.Label(c, text=self._t("Anahtar: deepl.com/pro-api"), style="CardMuted.TLabel",
                   font=(theme.FONT, 9)).pack(anchor="w", padx=12, pady=(0, 10))
 
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        theme.section(c, "OPENAI / GEMINI / DEEPSEEK").pack(fill="x")
+        theme.section(c, self._t("OPENAI / GEMINI / DEEPSEEK")).pack(fill="x")
         g = tk.Frame(c, bg=theme.CARD)
         g.pack(fill="x", padx=12, pady=(0, 10))
         self.openai_var = tk.StringVar(value=self.cfg["api_keys"].get("openai", ""))
         self.base_var = tk.StringVar(value=self.cfg["api_keys"].get("openai_base_url", ""))
         self.model_var = tk.StringVar(value=self.cfg["api_keys"].get("openai_model", "gpt-4o-mini"))
-        ttk.Label(g, text="API Anahtari:").grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Label(g, text=self._t("API Anahtarı:")).grid(row=0, column=0, sticky="w", pady=2)
         ttk.Entry(g, textvariable=self.openai_var, show="*", width=46).grid(row=0, column=1, sticky="we", padx=6, pady=2)
-        ttk.Label(g, text="Base URL (istege bagli):").grid(row=1, column=0, sticky="w", pady=2)
+        ttk.Label(g, text=self._t("Base URL (isteğe bağlı):")).grid(row=1, column=0, sticky="w", pady=2)
         ttk.Entry(g, textvariable=self.base_var, width=46).grid(row=1, column=1, sticky="we", padx=6, pady=2)
-        ttk.Label(g, text="Model:").grid(row=2, column=0, sticky="w", pady=2)
+        ttk.Label(g, text=self._t("Model:")).grid(row=2, column=0, sticky="w", pady=2)
         ttk.Entry(g, textvariable=self.model_var, width=46).grid(row=2, column=1, sticky="we", padx=6, pady=2)
-        ttk.Label(g, text="Gemini icin Base URL:\nhttps://generativelanguage.googleapis.com/v1beta/openai/",
+        ttk.Label(g, text=self._t("Gemini için Base URL:\nhttps://generativelanguage.googleapis.com/v1beta/openai/"),
                   style="CardMuted.TLabel", font=(theme.FONT, 9)).grid(row=3, column=0, columnspan=2, sticky="w", pady=(6, 0))
-        ttk.Label(g, text="DeepSeek icin Base URL:\nhttps://api.deepseek.com/v1  |  Model: deepseek-chat",
+        ttk.Label(g, text=self._t("DeepSeek için Base URL:\nhttps://api.deepseek.com/v1  |  Model: deepseek-chat"),
                   style="CardMuted.TLabel", font=(theme.FONT, 9)).grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 0))
-        ttk.Label(g, text="Groq icin Base URL:\nhttps://api.groq.com/openai/v1  |  Model: llama-3.3-70b-versatile",
+        ttk.Label(g, text=self._t("Groq için Base URL:\nhttps://api.groq.com/openai/v1  |  Model: llama-3.3-70b-versatile"),
                   style="CardMuted.TLabel", font=(theme.FONT, 9)).grid(row=5, column=0, columnspan=2, sticky="w", pady=(6, 0))
-        theme.ModernButton(g, text="Test Et", command=self._test_openai,
+        theme.ModernButton(g, text=self._t("Test Et"), command=self._test_openai,
                            kind="secondary").grid(row=6, column=0, columnspan=2, sticky="w", pady=(8, 0))
         g.columnconfigure(1, weight=1)
 
         c = theme.card(tab)
         c.pack(fill="x", padx=14, pady=8)
-        theme.section(c, "GIZLILIK").pack(fill="x")
-        ttk.Label(c, text=(
-            "API anahtarlariniz yalnizca cihazinizda saklanir. "
-            "Cevirilecek metinler yalnizca seÃ§tiginiz motorun sunucusuna gonderilir. "
-            "Ekran goruntuleri ve ceviri gecmisi cihazinizda kalir; sunucuya yuklenmez."
+        theme.section(c, self._t("GİZLİLİK")).pack(fill="x")
+        ttk.Label(c, text=self._t(
+            "API anahtarlarınız yalnızca cihazınızda saklanır. "
+            "Çevrilecek metinler yalnızca seçtiğiniz motorun sunucusuna gönderilir. "
+            "Ekran görüntüleri ve çeviri geçmişi cihazınızda kalır; sunucuya yüklenmez."
         ), style="CardMuted.TLabel", wraplength=580, justify="left").pack(
             anchor="w", padx=12, pady=(0, 12))
 
-    # ---------- Gunluk ----------
+    # ---------- Günlük ----------
     def _build_tab_log(self):
         tab = self.tab_log
         row = tk.Frame(tab, bg=theme.BG)
         row.pack(fill="x", padx=14, pady=(14, 6))
-        ttk.Label(row, text="ISLEM GUNLUGU", style="Muted.TLabel",
+        ttk.Label(row, text=self._t("İŞLEM GÜNLÜĞÜ"), style="Muted.TLabel",
                   font=(theme.FONT_BOLD, 10)).pack(side="left")
-        theme.ModernButton(row, text="Temizle", command=self._clear_log,
+        theme.ModernButton(row, text=self._t("Temizle"), command=self._clear_log,
                            kind="secondary").pack(side="right")
         self.log_text = tk.Text(tab, wrap="word", bg=theme.CARD_2, fg=theme.TEXT,
                                 insertbackground=theme.TEXT, relief="flat",
@@ -455,15 +475,15 @@ class MainGUI:
         for item in self._log_buffer:
             self._append_log(item[0], item[1])
 
-    # ---------- Durum cubugu ----------
+    # ---------- Durum çubuğu ----------
     def _build_statusbar(self):
         bar = tk.Frame(self.root, bg=theme.CARD, height=34)
         bar.pack(fill="x", side="bottom")
         bar.pack_propagate(False)
-        self.sb_state = tk.Label(bar, text="â—", bg=theme.CARD, fg=theme.MUTED,
+        self.sb_state = tk.Label(bar, text="●", bg=theme.CARD, fg=theme.MUTED,
                                  font=(theme.FONT, 12))
         self.sb_state.pack(side="left", padx=(14, 4))
-        self.sb_text = tk.Label(bar, text="Durduruldu", bg=theme.CARD, fg=theme.MUTED,
+        self.sb_text = tk.Label(bar, text=self._t("Durduruldu"), bg=theme.CARD, fg=theme.MUTED,
                                 font=(theme.FONT, 9))
         self.sb_text.pack(side="left")
         version_txt = f"v{VERSION}{' beta' if BETA else ''}"
@@ -476,7 +496,7 @@ class MainGUI:
 
     def _show_about(self):
         win = tk.Toplevel(self.root)
-        win.title("Hakkinda")
+        win.title(self._t("Hakkında"))
         win.configure(bg=theme.BG)
         win.resizable(False, False)
         win.transient(self.root)
@@ -487,19 +507,19 @@ class MainGUI:
 
         tk.Label(card, text=APP_TITLE, bg=theme.CARD, fg=theme.TEXT,
                  font=(theme.FONT_BOLD, 18)).pack(anchor="w", padx=16, pady=(16, 0))
-        version_txt = f"SÃ¼rÃ¼m {VERSION}" + (" (BETA)" if BETA else "")
+        version_txt = self._t("Sürüm {v}", v=VERSION) + (" (BETA)" if BETA else "")
         tk.Label(card, text=version_txt, bg=theme.CARD, fg=theme.ACCENT,
                  font=(theme.FONT_BOLD, 10)).pack(anchor="w", padx=16)
-        tk.Label(card, text="Gercek zamanli AI oyun ceviri programi",
+        tk.Label(card, text=self._t("Gerçek zamanlı AI oyun çeviri programı"),
                  bg=theme.CARD, fg=theme.MUTED,
                  font=(theme.FONT, 9)).pack(anchor="w", padx=16, pady=(4, 10))
 
         info = tk.Frame(card, bg=theme.CARD)
         info.pack(fill="x", padx=16)
         rows = [
-            ("Gelistiren:", f"{COMPANY} sirketi"),
-            ("Tasarim:", DESIGNER),
-            ("Durum:", "Beta surum"),
+            (self._t("Geliştiren:"), f"{COMPANY} {self._t('şirketi')}"),
+            (self._t("Tasarım:"), DESIGNER),
+            (self._t("Durum:"), self._t("Beta sürüm")),
         ]
         for label, value in rows:
             line = tk.Frame(info, bg=theme.CARD)
@@ -512,16 +532,28 @@ class MainGUI:
         tk.Frame(card, bg=theme.CARD_2, height=1).pack(fill="x", padx=16, pady=14)
         tk.Label(card, text=COPYRIGHT, bg=theme.CARD, fg=theme.MUTED,
                  font=(theme.FONT, 8)).pack(anchor="w", padx=16)
-        tk.Label(card, text="Yalnizca ekrani okur; oyun dosyalarina dokunmaz.",
+        tk.Label(card, text=self._t("Yalnızca ekranı okur; oyun dosyalarına dokunmaz."),
                  bg=theme.CARD, fg=theme.MUTED,
                  font=(theme.FONT, 8)).pack(anchor="w", padx=16, pady=(2, 16))
 
-        theme.ModernButton(win, text="Kapat", command=win.destroy,
+        theme.ModernButton(win, text=self._t("Kapat"), command=win.destroy,
                            kind="accent", font=(theme.FONT, 10)).pack(pady=(0, 20))
 
-    # ---------- API anahtari hatirlatmasi (ilk acilis) ----------
+    # ---------- Dil değiştirme ----------
+    def _on_lang_change(self):
+        name = self.lang_var.get()
+        code = next((c for c, n in i18n.LANGUAGES if n == name), None)
+        if not code or code == self._lang:
+            return
+        self._lang = code
+        self.cfg["language"] = code
+        config_mod.save_config(self.cfg)
+        messagebox.showinfo(self._t("DİL / LANGUAGE"),
+                            self._t("Dil değiştirildi. Uygulamayı yeniden başlatın."))
+
+    # ---------- API anahtarı hatırlatması (ilk açılış) ----------
     def _maybe_prompt_api_key(self):
-        """Anahtar tanimli degilse acilista 'API Anahtari Ekle' penceresini acar."""
+        """Anahtar tanımlı değilse açılışta 'API Anahtarı Ekle' penceresini açar."""
         keys = self.cfg.get("api_keys", {})
         if keys.get("deepl") or keys.get("openai"):
             return
@@ -531,7 +563,7 @@ class MainGUI:
 
     def _prompt_api_key_window(self):
         win = tk.Toplevel(self.root)
-        win.title("API Anahtari Ekle")
+        win.title(self._t("API Anahtarı Ekle"))
         win.configure(bg=theme.BG)
         win.resizable(False, False)
         win.transient(self.root)
@@ -539,59 +571,54 @@ class MainGUI:
         card = theme.card(win, bg=theme.CARD)
         card.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Label(card, text="API Anahtari Ekle", bg=theme.CARD, fg=theme.TEXT,
+        tk.Label(card, text=self._t("API Anahtarı Ekle"), bg=theme.CARD, fg=theme.TEXT,
                  font=(theme.FONT_BOLD, 16)).pack(anchor="w", padx=16, pady=(16, 2))
-        tk.Label(card, text=(
-            "Google ve MyMemory motorlari anahtarsiz, ucretsiz calisir. "
-            "DeepL / OpenAI (ChatGPT, Gemini, DeepSeek) motorlari icin API "
-            "anahtari gerekir. Anahtariniz yalnizca bu cihazda, sifreli "
-            "olarak saklanir; GitHub'a ya da hicbir sunucuya gonderilmez."
+        tk.Label(card, text=self._t(
+            "Google ve MyMemory motorları anahtarsız, ücretsiz çalışır. "
+            "DeepL / OpenAI (ChatGPT, Gemini, DeepSeek) motorları için API "
+            "anahtarı gerekir. Anahtarınız yalnızca bu cihazda, şifreli "
+            "olarak saklanır; GitHub'a ya da hiçbir sunucuya gönderilmez."
         ), bg=theme.CARD, fg=theme.MUTED, wraplength=540, justify="left",
             font=(theme.FONT, 9)).pack(anchor="w", padx=16, pady=(0, 12))
 
         g = tk.Frame(card, bg=theme.CARD)
         g.pack(fill="x", padx=16)
-        ttk.Label(g, text="DeepL Anahtari:").grid(row=0, column=0, sticky="w", pady=3)
+        ttk.Label(g, text=self._t("DeepL Anahtarı:")).grid(row=0, column=0, sticky="w", pady=3)
         ttk.Entry(g, textvariable=self.deepl_var, show="*", width=44).grid(
             row=0, column=1, sticky="we", padx=8, pady=3)
-        ttk.Label(g, text="OpenAI/Gemini/DeepSeek Anahtari:").grid(row=1, column=0, sticky="w", pady=3)
+        ttk.Label(g, text=self._t("OpenAI/Gemini/DeepSeek Anahtarı:")).grid(row=1, column=0, sticky="w", pady=3)
         ttk.Entry(g, textvariable=self.openai_var, show="*", width=44).grid(
             row=1, column=1, sticky="we", padx=8, pady=3)
-        ttk.Label(g, text="Base URL (istege bagli):").grid(row=2, column=0, sticky="w", pady=3)
+        ttk.Label(g, text=self._t("Base URL (isteğe bağlı):")).grid(row=2, column=0, sticky="w", pady=3)
         ttk.Entry(g, textvariable=self.base_var, width=44).grid(
             row=2, column=1, sticky="we", padx=8, pady=3)
-        ttk.Label(g, text="Model (istege bagli):").grid(row=3, column=0, sticky="w", pady=3)
+        ttk.Label(g, text=self._t("Model (isteğe bağlı):")).grid(row=3, column=0, sticky="w", pady=3)
         ttk.Entry(g, textvariable=self.model_var, width=44).grid(
             row=3, column=1, sticky="we", padx=8, pady=3)
         g.columnconfigure(1, weight=1)
 
         tk.Frame(card, bg=theme.BORDER, height=1).pack(fill="x", padx=16, pady=12)
-        tk.Label(card, text="Anahtar nasil alinir?", bg=theme.CARD, fg=theme.ACCENT,
+        tk.Label(card, text=self._t("Anahtar nasıl alınır?"), bg=theme.CARD, fg=theme.ACCENT,
                  font=(theme.FONT_BOLD, 11)).pack(anchor="w", padx=16, pady=(0, 4))
         steps = (
-            "1. DeepL: deepl.com/pro-api adresinden ucretsiz kayit olun. 'DeepL API Free' "
-            "planinda olusan 'Authentication Key'i kopyalayip yukaridaki DeepL alanina yapistirin.",
-            "2. OpenAI: platform.openai.com/api-keys adresinde 'Create new secret key' "
-            "butonuyla anahtar olusturup OpenAI alanina yapistirin.",
-            "3. Gemini: aistudio.google.com adresinden anahtar alin. Base URL kutusuna "
-            "https://generativelanguage.googleapis.com/v1beta/openai/ yazin.",
-            "4. DeepSeek: platform.deepseek.com adresinden anahtar alin. Base URL kutusuna "
-            "https://api.deepseek.com/v1, Model kutusuna deepseek-chat yazin.",
-            "5. Anahtar girdikten sonra 'Kaydet ve Kapat' butonuna basin. Anahtar eklemeden "
-            "de Google/MyMemory motorlariyla ceviriye baslayabilirsiniz.",
+            "1. DeepL: deepl.com/pro-api adresinden ücretsiz kayıt olun. 'DeepL API Free' planında oluşan 'Authentication Key'i kopyalayıp yukarıdaki DeepL alanına yapıştırın.",
+            "2. OpenAI: platform.openai.com/api-keys adresinde 'Create new secret key' butonuyla anahtar oluşturup OpenAI alanına yapıştırın.",
+            "3. Gemini: aistudio.google.com adresinden anahtar alın. Base URL kutusuna https://generativelanguage.googleapis.com/v1beta/openai/ yazın.",
+            "4. DeepSeek: platform.deepseek.com adresinden anahtar alın. Base URL kutusuna https://api.deepseek.com/v1, Model kutusuna deepseek-chat yazın.",
+            "5. Anahtar girdikten sonra 'Kaydet ve Kapat' butonuna basın. Anahtar eklemeden de Google/MyMemory motorlarıyla çeviriye başlayabilirsiniz.",
         )
         for s in steps:
-            tk.Label(card, text=s, bg=theme.CARD, fg=theme.MUTED, wraplength=540,
+            tk.Label(card, text=self._t(s), bg=theme.CARD, fg=theme.MUTED, wraplength=540,
                      justify="left", font=(theme.FONT, 9)).pack(anchor="w", padx=16, pady=1)
 
         self.prompt_done_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(card, text="Bir daha sorma (yalnizca ucretsiz motorlari kullaniyorsaniz)",
+        ttk.Checkbutton(card, text=self._t("Bir daha sorma (yalnızca ücretsiz motorları kullanıyorsanız)"),
                         variable=self.prompt_done_var).pack(anchor="w", padx=16, pady=(10, 4))
 
         def close(save):
             if save:
                 self._sync_cfg()
-                self._log("API anahtari kaydedildi.", "ok")
+                self._log(self._t("API anahtarı kaydedildi."), "ok")
             if self.prompt_done_var.get():
                 self.cfg["api_key_prompt_done"] = True
                 config_mod.save_config(self.cfg)
@@ -599,9 +626,9 @@ class MainGUI:
 
         row = tk.Frame(card, bg=theme.CARD)
         row.pack(fill="x", padx=16, pady=(6, 14))
-        theme.ModernButton(row, text="Kaydet ve Kapat", command=lambda: close(True),
+        theme.ModernButton(row, text=self._t("Kaydet ve Kapat"), command=lambda: close(True),
                            kind="accent").pack(side="right", padx=(8, 0))
-        theme.ModernButton(row, text="Sonra", command=lambda: close(False),
+        theme.ModernButton(row, text=self._t("Sonra"), command=lambda: close(False),
                            kind="ghost").pack(side="right")
         win.protocol("WM_DELETE_WINDOW", lambda: close(False))
 
@@ -611,12 +638,13 @@ class MainGUI:
     # ================= Olaylar =================
     def _refresh_region_text(self):
         r = self.cfg["region"]
-        self.region_var.set(
-            f"Bolge: X={r['left']}  Y={r['top']}  {r['width']}x{r['height']}  â€”  altyazilarin oldugu alani surukleyerek secin")
+        self.region_var.set(self._t(
+            "Bölge: X={left}  Y={top}  {w}x{h}  —  altyazıların olduğu alanı sürükleyerek seçin",
+            left=r["left"], top=r["top"], w=r["width"], h=r["height"]))
 
     def _refresh_engine_desc(self):
         eng = self.engine_var.get()
-        self.engine_desc.configure(text=ENGINE_DESC.get(eng, ""))
+        self.engine_desc.configure(text=self._t(ENGINE_DESC.get(eng, "")))
 
     def _select_region(self):
         region = select_region(self.root, self.cfg.get("monitor", 0))
@@ -624,7 +652,9 @@ class MainGUI:
             self.cfg["region"] = region
             self._refresh_region_text()
             self.overlay.update_position(region)
-            self._log(f"Bolge secildi: {region['width']}x{region['height']} @ ({region['left']},{region['top']})", "ok")
+            self._log(self._t("Bölge seçildi: {w}x{h} @ ({x},{y})",
+                              w=region["width"], h=region["height"],
+                              x=region["left"], y=region["top"]), "ok")
         return region
 
     def _preview_region(self):
@@ -632,16 +662,16 @@ class MainGUI:
         try:
             img = grab_region(self.cfg["region"], self.cfg.get("monitor", 0))
             img.show()
-            self._log("Bolge onizlemesi ayri pencerede acildi.", "info")
+            self._log(self._t("Bölge önizlemesi ayrı pencerede açıldı."), "info")
         except Exception as exc:
-            self._log(f"Onizleme hatasi: {exc}", "error")
+            self._log(self._t("Önizleme hatası: {exc}", exc=exc), "error")
 
     def _preview_overlay(self):
         self._apply_overlay_style()
-        sample = ["Bu bir ornek altyazi satiridir.",
-                  "Altyazi katmaninin gorunumunu burada test edebilirsin."]
+        sample = [self._t("Bu bir örnek altyazı satırıdır."),
+                  self._t("Altyazı katmanının görünümünü burada test edebilirsin.")]
         self.overlay.show(sample, opacity=float(self.opacity_var.get()))
-        self._log("Overlay onizlemesi gosterildi (F11 ile kapat).", "info")
+        self._log(self._t("Overlay önizlemesi gösterildi (F11 ile kapat)."), "info")
 
     def _swap_langs(self):
         a = self.source_var.get()
@@ -654,7 +684,7 @@ class MainGUI:
 
     def _pick_color(self):
         color = colorchooser.askcolor(color=self.color_var.get(),
-                                      title="Yazi rengi sec")[1]
+                                      title=self._t("Yazı rengi seç"))[1]
         if color:
             self.color_var.set(color)
             self._apply_overlay_style()
@@ -687,7 +717,7 @@ class MainGUI:
         self._save_profile(self.cfg.get("last_game_name", ""))
         self._load_profile(game)
         self.cfg["last_game_name"] = game
-        self._log(f"Profil yuklendi: {game}", "info")
+        self._log(self._t("Profil yüklendi: {game}", game=game), "info")
 
     def _load_profile(self, game):
         prof = config_mod.get_profile(self.base_cfg, game)
@@ -724,12 +754,12 @@ class MainGUI:
         title, exe = self._foreground_process()
         name = exe or title
         if not name:
-            self._log("On plandaki pencere algilanamadi.", "warn")
+            self._log(self._t("Ön plandaki pencere algılanamadı."), "warn")
             return
         self.game_var.set(name)
         self._on_game_changed()
         extra = f" ({title})" if title and title.lower() != name.lower() else ""
-        self._log(f"Oyun algilandi: {name}{extra}", "ok")
+        self._log(self._t("Oyun algılandı: {name}", name=name + extra), "ok")
 
     def _auto_detect_initial(self):
         if not self.cfg.get("auto_detect_game", True):
@@ -740,10 +770,10 @@ class MainGUI:
         self._auto_detect_game()
 
     def _foreground_process(self):
-        """On plandaki pencerenin (baslik, exe adi) bilgisini dondurur.
+        """Ön plandaki pencerenin (başlık, exe adı) bilgisini döndürür.
 
-        Profiller, degisen pencere basliklari yerine process exe adina
-        gore eslesir (orn. 'eldenring.exe').
+        Profiller, değişen pencere başlıkları yerine process exe adına
+        göre eşleşir (örn. 'eldenring.exe').
         """
         try:
             hwnd = ctypes.windll.user32.GetForegroundWindow()
@@ -778,7 +808,7 @@ class MainGUI:
             exe = ""
         return title, exe.lower()
 
-    # ================= Motor dongusu =================
+    # ================= Motor döngüsü =================
     def _sync_cfg(self):
         self.cfg["source_lang"] = self.source_var.get()
         self.cfg["target_lang"] = self.target_var.get()
@@ -805,8 +835,8 @@ class MainGUI:
             try:
                 self._start_pipeline()
             except Exception as exc:  # noqa: BLE001
-                self._set_status(f"HATA: {exc}", error=True)
-                self._log(f"Baslatma hatasi: {exc}", "error")
+                self._set_status(self._t("HATA: {exc}", exc=exc), error=True)
+                self._log(self._t("Başlatma hatası: {exc}", exc=exc), "error")
 
     def _start_pipeline(self):
         self._sync_cfg()
@@ -820,54 +850,56 @@ class MainGUI:
                                             on_status=self._set_status,
                                             on_log=self._log)
         self.pipeline.start()
-        self.toggle_btn.configure(text="Ceviriyi Durdur  (F9)")
+        self.toggle_btn.configure(text=self._t("Çeviriyi Durdur  (F9)"))
         self.toggle_btn.set_kind("danger")
         self._set_running(True)
         mode = getattr(self.pipeline.ocr, "mode", "unknown")
-        self._log(f"Pipeline basladi. Motor: {self.cfg['engine']} | OCR: {mode}", "ok")
+        self._log(self._t("Pipeline başladı. Motor: {engine} | OCR: {mode}",
+                          engine=self.cfg["engine"], mode=mode), "ok")
 
     def _stop_pipeline(self):
         if self.pipeline:
             self.pipeline.stop()
         self._pipeline_error_reported = False
-        self.toggle_btn.configure(text="Ceviriyi Baslat  (F9)")
+        self.toggle_btn.configure(text=self._t("Çeviriyi Başlat  (F9)"))
         self.toggle_btn.set_kind("accent")
         self._set_running(False)
 
     def _set_running(self, running):
         if running:
             self.sb_state.configure(fg=theme.GREEN)
-            self.sb_text.configure(text="Calisiyor", fg=theme.GREEN)
-            self.header_state.configure(text="CALISIYOR", fg=theme.GREEN)
+            self.sb_text.configure(text=self._t("Çalışıyor"), fg=theme.GREEN)
+            self.header_state.configure(text=self._t("CALISIYOR"), fg=theme.GREEN)
         else:
             self.sb_state.configure(fg=theme.MUTED)
-            self.sb_text.configure(text="Durduruldu", fg=theme.MUTED)
-            self.header_state.configure(text="DURDURULDU", fg=theme.MUTED)
+            self.sb_text.configure(text=self._t("Durduruldu"), fg=theme.MUTED)
+            self.header_state.configure(text=self._t("DURDURULDU"), fg=theme.MUTED)
 
     def _set_status(self, text, error=False):
         if threading.current_thread() is not self._ui_thread:
             self._ui_tasks.put((self._set_status, (text, error)))
             return
-        self.status_var.set(text)
-        if "OKUNAN" in text:
+        if text.startswith("OKUNAN:") or text.startswith("READING:"):
             self._log(text, "info")
+        self.status_var.set(text)
 
-    # ---------- Manuel ekran cevirisi (F10) ----------
+    # ---------- Manuel ekran çevirisi (F10) ----------
     def _manual_translate(self):
         region = select_region(self.root, self.cfg.get("monitor", 0))
         if not region:
             return
-        self._log(f"Manuel bolge: {region['width']}x{region['height']}", "info")
+        self._log(self._t("Manuel bölge: {w}x{h}", w=region["width"], h=region["height"]), "info")
         self.overlay.update_position(region)
         self.cfg["region"] = region
         self._refresh_region_text()
         self._sync_cfg()
-        # UI thread'deki degiskenleri worker'a kopyala; thread icinde
-        # Tkinter degiskenleri okunmaz.
+        # UI thread'deki değişkenleri worker'a kopyala; thread içinde
+        # Tkinter değişkenleri okunmaz.
         snapshot = dict(self.cfg)
         snapshot["region"] = dict(region)
         monitor = snapshot.get("monitor", 0)
         source, target = snapshot["source_lang"], snapshot["target_lang"]
+        lang = self._lang
 
         def work():
             try:
@@ -878,7 +910,7 @@ class MainGUI:
                     raw = OcrEngine(snapshot).read(img)
                 lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
                 if not lines:
-                    self.root.after(0, lambda: self._set_status("Bolgede metin bulunamadi."))
+                    self.root.after(0, lambda: self._set_status(i18n.t("Bölgede metin bulunamadı.", lang)))
                     return
                 cache_file = os.path.join(config_mod.cache_dir(), "_manual.json")
                 tr = Translator(snapshot, cache_file)
@@ -886,14 +918,14 @@ class MainGUI:
                 self.root.after(0, lambda: self._show_manual(out, raw))
             except Exception as exc:  # noqa: BLE001
                 msg = str(exc)
-                self.root.after(0, lambda: self._log(f"Manuel ceviri hatasi: {msg}", "error"))
+                self.root.after(0, lambda: self._log(i18n.t("Manuel çeviri hatası: {msg}", lang, msg=msg), "error"))
 
         threading.Thread(target=work, daemon=True).start()
 
     def _show_manual(self, lines, raw):
         self._set_output("\n".join(lines))
         self.overlay.show(lines, opacity=float(self.opacity_var.get()))
-        self._set_status(f"Manuel ceviri: {len(lines)} satir")
+        self._set_status(self._t("Manuel çeviri: {n} satır", n=len(lines)))
 
     # ---------- Testler ----------
     def _test_engine(self):
@@ -901,16 +933,17 @@ class MainGUI:
         self._sync_cfg()
         snapshot = dict(self.cfg)
         cache_file = os.path.join(config_mod.cache_dir(), "_test.json")
+        lang = self._lang
 
         def work():
             try:
                 tr = Translator(snapshot, cache_file)
                 out = tr.translate("Welcome to the village, hero!", "en", "tr", engine=eng)
-                self.root.after(0, lambda: self._set_output(f"Motor testi basarili:\n{out}"))
-                self.root.after(0, lambda: self._log(f"{eng} motoru testi: OK", "ok"))
+                self.root.after(0, lambda: self._set_output(i18n.t("Motor testi başarılı:\n{out}", lang, out=out)))
+                self.root.after(0, lambda: self._log(i18n.t("{eng} motoru testi: OK", lang, eng=eng), "ok"))
             except Exception as exc:  # noqa: BLE001
                 msg = str(exc)
-                self.root.after(0, lambda: self._log(f"{eng} testi basarisiz: {msg}", "error"))
+                self.root.after(0, lambda: self._log(i18n.t("{eng} testi başarısız: {msg}", lang, eng=eng, msg=msg), "error"))
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -918,17 +951,19 @@ class MainGUI:
         self._sync_cfg()
         snapshot = dict(self.cfg)
         cache_file = os.path.join(config_mod.cache_dir(), "_test.json")
+        lang = self._lang
 
         def work():
             try:
                 tr = Translator(snapshot, cache_file)
                 out = tr.translate("Hello there!", "en", "tr", engine="openai")
-                self.root.after(0, lambda: self._set_output(f"OpenAI uyumlu API testi:\n{out}"))
-                self.root.after(0, lambda: self._log(
-                    f"OpenAI uyumlu test: OK ({snapshot['api_keys'].get('openai_model')})", "ok"))
+                self.root.after(0, lambda: self._set_output(i18n.t("OpenAI uyumlu API testi:\n{out}", lang, out=out)))
+                self.root.after(0, lambda: self._log(i18n.t(
+                    "OpenAI uyumlu test: OK ({model})",
+                    lang, model=snapshot["api_keys"].get("openai_model")), "ok"))
             except Exception as exc:  # noqa: BLE001
                 msg = str(exc)
-                self.root.after(0, lambda: self._log(f"OpenAI testi basarisiz: {msg}", "error"))
+                self.root.after(0, lambda: self._log(i18n.t("OpenAI testi başarısız: {msg}", lang, msg=msg), "error"))
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -938,7 +973,7 @@ class MainGUI:
         self.output_text.insert("1.0", text)
         self.output_text.configure(state="disabled")
 
-    # ---------- Gunluk ----------
+    # ---------- Günlük ----------
     def _log(self, text, kind="info"):
         if threading.current_thread() is not self._ui_thread:
             self._ui_tasks.put((self._log, (text, kind)))
@@ -968,7 +1003,7 @@ class MainGUI:
             self.log_text.configure(state="disabled")
         self._log_buffer = []
 
-    # ---------- Donemsel ----------
+    # ---------- Dönemsel ----------
     def _poll_queue(self):
         try:
             while True:
@@ -983,7 +1018,7 @@ class MainGUI:
                     if msg.get("clear"):
                         self._set_output("")
                         self.overlay.hide()
-                        self._set_status("Altyazi beklemede...")
+                        self._set_status(self._t("Altyazı bekleniyor..."))
                         continue
                     lines = msg.get("lines", [])
                     self._set_output("\n".join(lines))
@@ -996,15 +1031,15 @@ class MainGUI:
             if self.pipeline.state == "failed" and not self._pipeline_error_reported:
                 self._pipeline_error_reported = True
                 self._stop_pipeline()
-                self._log(f"Pipeline durdu: {self.pipeline.error}", "error")
-                self._set_status(f"HATA: {self.pipeline.error}", error=True)
+                self._log(self._t("Pipeline durdu: {exc}", exc=self.pipeline.error), "error")
+                self._set_status(self._t("HATA: {exc}", exc=self.pipeline.error), error=True)
             elif self.pipeline.state == "running":
                 self._pipeline_error_reported = False
             st = self.pipeline.stats
             self.sb_stats.configure(
-                text=f"FPS {st['fps']:.1f} | Gecikme {st['latency_ms']} ms | "
-                     f"Ceviri {st['translated']} | Cache {st['cache_size']} | "
-                     f"Atla {st['skipped']}")
+                text=self._t("FPS {fps:.1f} | Gecikme {lat} ms | Çeviri {tr} | Cache {c} | Atla {sk}",
+                             fps=st["fps"], lat=st["latency_ms"], tr=st["translated"],
+                             c=st["cache_size"], sk=st["skipped"]))
             if hasattr(self, "stat_widgets"):
                 self.stat_widgets["fps"].configure(text=f"{st['fps']:.1f}")
                 self.stat_widgets["latency"].configure(text=f"{st['latency_ms']} ms")
@@ -1021,12 +1056,13 @@ class MainGUI:
             keyboard.add_hotkey(HOTKEYS["manual"], lambda: self.root.after(0, self._manual_translate))
             keyboard.add_hotkey(HOTKEYS["overlay"], lambda: self.root.after(0, self._toggle_overlay))
         except Exception:  # noqa: BLE001
-            self._log("Global kisayollar devre disi (admin yetkisi gerekli). Butonlari kullanin.", "warn")
+            self._log(self._t("Global kısayollar devre dışı (yönetici yetkisi gerekli). Butonları kullanın."), "warn")
 
     def _toggle_overlay(self):
         self._overlay_visible = not self._overlay_visible
         self.overlay.set_visible(self._overlay_visible)
-        self._log("Altyazi katmani " + ("gosterildi" if self._overlay_visible else "gizlendi"), "info")
+        self._log(self._t("Altyazı katmanı gösterildi") if self._overlay_visible
+                  else self._t("Altyazı katmanı gizlendi"), "info")
 
     def on_close(self):
         try:
